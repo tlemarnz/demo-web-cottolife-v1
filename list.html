@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>สินค้าทั้งหมด | COTTO LiFE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="assets/list.css">
+</head>
+<body>
+<div id="hdr"></div>
+
+<div class="wrap"><nav class="crumb" id="crumb"></nav></div>
+
+<section class="cat-hero"><div class="wrap">
+  <div style="flex:1">
+    <div class="eyebrow" id="hEyebrow"></div>
+    <h1 id="hTitle"></h1>
+    <p class="lede" id="hLede"></p>
+  </div>
+  <img class="cover" id="hCover" alt="">
+</div></section>
+
+<nav class="mainbar"><div class="wrap" id="mainbarIn"></div></nav>
+<div class="typebar" id="typebar"><div class="wrap" id="typebarIn"></div></div>
+
+<div class="mbar wrap" id="mbar">
+  <button id="mFil"><span id="icFil"></span>ตัวกรอง <span class="fnum" id="mFilN" hidden>0</span></button>
+  <button id="mSort"><span id="icSort"></span>เรียงลำดับ</button>
+</div>
+
+<div class="wrap layout">
+
+  <aside class="side">
+    <div class="side-top">
+      <b>ตัวกรอง</b>
+      <button id="clrAll" hidden>ล้างทั้งหมด</button>
+    </div>
+    <div id="facets"></div>
+  </aside>
+
+  <main>
+    <div class="rbar">
+      <div class="rcount" id="rcount"></div>
+      <div class="sp"></div>
+      <div class="sortsel">
+        <label for="sort">เรียงลำดับ</label>
+        <select id="sort"></select>
+      </div>
+      <div class="sortsel">
+        <label for="per">แสดง</label>
+        <select id="per">
+          <option value="12">12</option><option value="24" selected>24</option>
+          <option value="36">36</option><option value="999">ทั้งหมด</option>
+        </select>
+      </div>
+      <div class="vtog">
+        <button id="vGrid" class="on" title="มุมมองตาราง"></button>
+        <button id="vRows" title="มุมมองรายการ"></button>
+      </div>
+    </div>
+
+    <div class="achips" id="achips" hidden></div>
+    <div class="sgrid" id="grid"></div>
+    <div class="pgnote" id="pgnote"></div>
+    <div class="pager" id="pager"></div>
+
+    <div class="seo" id="seo"></div>
+  </main>
+</div>
+
+<div class="cmpbar" id="cmpbar"><div class="wrap">
+  <div class="cl" id="cmpList"></div>
+  <span class="hint2" id="cmpHint"></span>
+  <button class="btn btn-primary btn-sm" id="cmpGo">เปรียบเทียบ</button>
+</div></div>
+
+<!-- bottom sheet: ตัวกรอง (มือถือ) -->
+<div class="sheet" id="shFil">
+  <div class="sc" data-close></div>
+  <div class="sp">
+    <div class="sh"><b>ตัวกรอง</b><button data-close>×</button></div>
+    <div class="sbody">
+      <div id="facetsM"></div>
+    </div>
+    <div class="sf">
+      <button class="btn btn-ghost" id="mClr">ล้างทั้งหมด</button>
+      <button class="btn btn-primary" data-close id="mApply">ดูสินค้า</button>
+    </div>
+  </div>
+</div>
+
+<!-- bottom sheet: เรียงลำดับ (มือถือ) -->
+<div class="sheet" id="shSort">
+  <div class="sc" data-close></div>
+  <div class="sp">
+    <div class="sh"><b>เรียงลำดับ</b><button data-close>×</button></div>
+    <div class="sbody" id="sortM"></div>
+  </div>
+</div>
+
+<div id="ftr"></div>
+<div id="toast"></div>
+
+<script src="assets/icons.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  var $ = CL.$, $$ = CL.$$, money = CL.money, img = CL.img;
+  var C = CATALOG;
+
+  /* ---------- state ---------- */
+  function params() {
+    var s = location.search.slice(1) || location.hash.replace(/^#\??/, "");
+    var o = {};
+    s.split("&").forEach(function (p) {
+      if (!p) return; var i = p.indexOf("=");
+      o[decodeURIComponent(p.slice(0, i))] = decodeURIComponent(p.slice(i + 1));
+    });
+    return o;
+  }
+  var P = params();
+  var cat = ["sanitary", "accessory"].indexOf(P.cat) >= 0 ? P.cat : "tile";
+  var MAIN = [{id:"tile", label:"กระเบื้อง", ic:"tile"},
+              {id:"sanitary", label:"สุขภัณฑ์", ic:"toilet"},
+              {id:"accessory", label:"อุปกรณ์ห้องน้ำ", ic:"shower"}];
+  var sel = {};                        // {facetKey: [values]}
+  if (P.f) try { sel = JSON.parse(P.f); } catch (e) {}
+  if (P.pattern) sel.pattern = [P.pattern];
+  if (P.use) sel.use = [P.use];
+  if (P.kind) sel.kind = [P.kind];
+  var sortBy = P.sort || "featured";
+  var per = 24, page = 1, view = "grid", cmp = [];
+  var FAC = C.facets[cat], SORTS = C.sorts[cat];
+
+  var HERO = {
+    tile: {eyebrow:"PRODUCTS / กระเบื้อง", title:"กระเบื้องปูพื้นและบุผนัง",
+      cover:"room-living",
+      lede:"กระเบื้องเซรามิกและพอร์ซเลนจาก COTTO, SOSUCO และ CAMPANA สำหรับพื้นและผนัง ทั้งภายในและภายนอก "+
+           "เลือกจากงบต่อตารางเมตร ลวดลาย ผิวสัมผัส และค่าต้านทานความลื่น ราคาที่แสดงเป็นราคาต่อตารางเมตร "+
+           "ระบบจะคำนวณเป็นจำนวนกล่องให้ในหน้าสินค้า"},
+    accessory: {eyebrow:"PRODUCTS / อุปกรณ์ห้องน้ำ", title:"อุปกรณ์ห้องน้ำ",
+      cover:"acc-towelbar",
+      lede:"ราวแขวนผ้า ตะขอ ที่ใส่กระดาษชำระ ราวจับนิรภัย ก๊อกน้ำ และฝักบัว "+
+           "เลือกจากประเภทที่ต้องการก่อน แล้วค่อยเลือกสีผิวเคลือบให้เข้าชุดกับของเดิมในห้อง "+
+           "ทุกชิ้นระบุวัสดุและวิธีติดตั้งไว้ชัดเจน"},
+    sanitary: {eyebrow:"PRODUCTS / สุขภัณฑ์", title:"สุขภัณฑ์และอ่างล้างหน้า",
+      cover:"room-bath",
+      lede:"เริ่มจากเลือกประเภทการติดตั้งก่อน เพราะเป็นตัวกำหนดงานระบบทั้งหมด จากนั้นจึงตรวจ “ระยะท่อ” "+
+           "(Rough-in) และชนิดท่อ S-Trap / P-Trap ให้ตรงกับห้องน้ำเดิมของคุณ ผิดเพียง 20 มม. ก็ติดตั้งไม่ได้"}
+  }[cat];
+
+  /* ---------- หา SKU ที่ผ่านตัวกรอง ---------- */
+  var POOL = C.skus.filter(function (k) { return k.cat === cat; });
+
+  function matchFacet(f, k) {
+    var want = sel[f.key]; if (!want || !want.length) return true;
+    if (f.range) {
+      var n = f.get(k);
+      return want.some(function (v) {
+        var o = f.options.filter(function (x) { return x.v === v; })[0];
+        return o && n >= o.lo && n <= o.hi;
+      });
+    }
+    var got = f.get(k); if (got == null) return false;
+    got = Array.isArray(got) ? got : [got];
+    return want.some(function (v) { return got.indexOf(v) >= 0; });
+  }
+  /* ผ่านทุกตัวกรอง ยกเว้นตัวที่ระบุ — ใช้นับจำนวนแบบ faceted search */
+  function pass(k, exceptKey) {
+    return FAC.every(function (f) { return f.key === exceptKey || matchFacet(f, k); });
+  }
+  function matched() { return POOL.filter(function (k) { return pass(k); }); }
+
+  function optionsOf(f) {
+    if (f.options) return f.options.map(function (o) { return o.v; });
+    var seen = [], order = {};
+    POOL.forEach(function (k) {
+      var v = f.get(k); if (v == null) return;
+      (Array.isArray(v) ? v : [v]).forEach(function (x) {
+        if (seen.indexOf(x) < 0) { seen.push(x); order[x] = 0; }
+        order[x]++;
+      });
+    });
+    if (f.key === "size" || f.key === "color" || f.key === "tech") return seen;
+    return seen.sort(function (a, b) { return order[b] - order[a]; });
+  }
+  function countOf(f, v) {
+    var base = POOL.filter(function (k) { return pass(k, f.key); });
+    return base.filter(function (k) {
+      if (f.range) { var o = f.options.filter(function (x) { return x.v === v; })[0];
+        var n = f.get(k); return o && n >= o.lo && n <= o.hi; }
+      var g = f.get(k); if (g == null) return false;
+      return (Array.isArray(g) ? g : [g]).indexOf(v) >= 0;
+    }).length;
+  }
+
+  /* ---------- จัดกลุ่มเป็นซีรีส์ ---------- */
+  function groups() {
+    var mk = matched(), by = {}, out = [];
+    mk.forEach(function (k) {
+      if (!by[k.seriesId]) { by[k.seriesId] = {s: C.bySeries(k.seriesId), hits: []}; out.push(by[k.seriesId]); }
+      by[k.seriesId].hits.push(k);
+    });
+    out.forEach(function (g) {
+      var f = {}, z = {}, c = {};
+      g.hits.forEach(function (k) { f[k.finishLabel || k.flush || "-"] = 1; z[k.size] = 1; c[k.color] = 1; });
+      g.nFinish = Object.keys(f).length; g.nSize = Object.keys(z).length; g.nColor = Object.keys(c).length;
+      var P1 = function (k) { return cat === "tile" ? k.pricePerSqm : k.price; };
+      var W1 = function (k) { return cat === "tile" ? k.wasPerSqm : k.priceWas; };
+      g.priceFrom = Math.min.apply(null, g.hits.map(P1));
+      var cheap = g.hits.filter(function (k) { return P1(k) === g.priceFrom; })[0];
+      g.priceWas = W1(cheap) || 0;
+      g.inStock = g.hits.some(function (k) { return k.stock > 0; });
+      g.stockN = g.hits.reduce(function (a, k) { return a + k.stock; }, 0);
+    });
+    return out;
+  }
+
+  var SORTF = {
+    featured: function (a, b) { return (b.s.best ? 2 : 0) + (b.s["new"] ? 1 : 0) - ((a.s.best ? 2 : 0) + (a.s["new"] ? 1 : 0)) || b.s.sold - a.s.sold; },
+    "price-asc":  function (a, b) { return a.priceFrom - b.priceFrom; },
+    "price-desc": function (a, b) { return b.priceFrom - a.priceFrom; },
+    "new":        function (a, b) { return a.s.added < b.s.added ? 1 : -1; },
+    popular:      function (a, b) { return b.s.sold - a.s.sold; },
+    stock:        function (a, b) { return b.stockN - a.stockN; },
+    water:        function (a, b) { return Math.min.apply(null, a.hits.map(function(k){return k.rateL;})) -
+                                           Math.min.apply(null, b.hits.map(function(k){return k.rateL;})); },
+    name:         function (a, b) { return a.s.name.localeCompare(b.s.name, "th"); },
+    "size-asc":   function (a, b) { return area(a) - area(b); },
+    "size-desc":  function (a, b) { return area(b) - area(a); }
+  };
+  function area(g) {
+    return Math.min.apply(null, g.hits.map(function (k) {
+      var m = String(k.size).match(/(\d+)x(\d+)/); return m ? +m[1] * +m[2] : 1e9; }));
+  }
+
+  /* ---------- render: sidebar ---------- */
+  function facetHTML(mobile) {
+    var n = 0;
+    return FAC.map(function (f) {
+      n++;
+      var opts = optionsOf(f);
+      var act = (sel[f.key] || []).length;
+      /* เปิดไว้ 4 ตัวแรก + ตัวที่ถูกใช้งาน */
+      var open = n <= 4 || act;
+      var rows;
+      if (f.groups) {
+        rows = f.groups.map(function (gr) {
+          var inside = gr.sizes.filter(function (v) { return opts.indexOf(v) >= 0; });
+          if (!inside.length) return "";
+          return '<div class="fsub">' + gr.g + "</div>" + inside.map(row).join("");
+        }).join("");
+      } else {
+        var head = opts.slice(0, 7).map(row).join("");
+        var rest = opts.slice(7);
+        rows = head + (rest.length
+          ? '<div class="fx" hidden>' + rest.map(row).join("") + "</div>" +
+            '<button class="fmore" data-more="' + f.key + '">+ ดูอีก ' + rest.length + " รายการ</button>"
+          : "");
+      }
+      function row(v) {
+        var c = countOf(f, v), on = (sel[f.key] || []).indexOf(v) >= 0;
+        var sw = (f.swatch && f.swatch[v])
+          ? '<span class="sw2" style="background:' + f.swatch[v] + '"></span>' : "";
+        return '<label class="fopt' + (c ? "" : " zero") + '">' +
+          '<input type="checkbox" data-f="' + f.key + '" value="' + v + '"' +
+          (on ? " checked" : "") + (c ? "" : " disabled") + ">" + sw +
+          '<span class="lb">' + v + '</span><span class="fcount">' + c + "</span></label>";
+      }
+      return '<div class="fgroup' + (open ? " open" : "") + '" data-g="' + f.key + '">' +
+        '<button class="fhead" data-h="' + f.key + '">' +
+          '<span class="fnum">' + n + "</span>" + f.label +
+          (act ? '<span class="dotnew"></span>' : "") +
+          '<span class="car">' + ICON("down") + "</span></button>" +
+        '<div class="fbody">' +
+          rows +
+        "</div></div>";
+    }).join("");
+  }
+
+  function sortHTML() {
+    return SORTS.map(function (s) {
+      return '<option value="' + s.v + '"' + (s.v === sortBy ? " selected" : "") + ">" + s.label + "</option>";
+    }).join("");
+  }
+  function sortMobile() {
+    return SORTS.map(function (s) {
+      return '<label class="sopt"><input type="radio" name="ms" value="' + s.v + '"' +
+        (s.v === sortBy ? " checked" : "") + ">" + s.label + "</label>";
+    }).join("");
+  }
+
+  /* ---------- render: การ์ด ---------- */
+  function card(g) {
+    var s = g.s, hit = "", unit = cat === "tile" ? "/ ตร.ม." : cat === "accessory" ? "/ ชิ้น" : "/ ชุด";
+    var tot = s.skus.length;
+    if (g.hits.length < tot) hit = '<div class="hit">ตรงเงื่อนไข ' + g.hits.length + " จาก " + tot + " รายการ</div>";
+    var meta = cat === "tile"
+      ? '<span class="vcount"><b>' + g.nFinish + '</b> ผิวสัมผัส</span>' +
+        '<span class="vcount"><b>' + g.nSize + '</b> ขนาด</span>' +
+        (g.nColor > 1 ? '<span class="vcount"><b>' + g.nColor + "</b> สี</span>" : "") +
+        '<span class="vcount">' + g.hits[0].slip + "</span>"
+      : cat === "accessory"
+      ? '<span class="vcount"><b>' + g.nColor + '</b> สี</span>' +
+        '<span class="vcount">' + g.hits[0].material + "</span>" +
+        '<span class="vcount">' + g.hits[0].mount + "</span>"
+      : '<span class="vcount"><b>' + g.hits.length + '</b> รุ่น</span>' +
+        '<span class="vcount">' + g.hits[0].kind.replace("สุขภัณฑ์", "") + "</span>" +
+        (g.hits[0].rough !== "-" ? '<span class="vcount">ท่อ ' + g.hits[0].rough + "</span>" : "");
+    var was = (g.priceWas && g.priceWas > g.priceFrom)
+      ? '<span class="was">' + money(g.priceWas) + "</span>" : "";
+    return '<article class="scard">' +
+      '<a class="im" href="detail.html?s=' + s.id + '">' +
+        '<img src="' + img(s.img) + '" alt="' + s.name + '" loading="lazy">' +
+      "</a>" +
+      '<div class="bdg">' + CL.badges(s) + "</div>" +
+      '<label class="cmp"><input type="checkbox" data-cmp="' + s.id + '"' +
+        (cmp.indexOf(s.id) >= 0 ? " checked" : "") + ">เทียบ</label>" +
+      '<div class="bd">' +
+        '<div class="bn">' + s.brand + "</div>" +
+        '<h3><a href="detail.html?s=' + s.id + '">' + s.name + "</a></h3>" +
+        '<div class="sb">' + s.sub + "</div>" +
+        '<div class="meta">' + meta + "</div>" + hit +
+        '<div class="pr"><div><div class="p' + (was ? " sale" : "") + '">' + money(g.priceFrom) +
+          '<span class="u"> ' + unit + "</span></div>" + was + "</div>" +
+          CL.stockChip({stockState: g.inStock ? "ready" : "out"}) + "</div>" +
+      "</div></article>";
+  }
+
+  /* ---------- render ทั้งหน้า ---------- */
+  function render() {
+    var gs = groups().sort(SORTF[sortBy] || SORTF.featured);
+    var nSku = gs.reduce(function (a, g) { return a + g.hits.length; }, 0);
+    var pages = Math.max(1, Math.ceil(gs.length / per));
+    if (page > pages) page = 1;
+    var slice = gs.slice((page - 1) * per, page * per);
+
+    $("#rcount").innerHTML = "<b>" + gs.length + "</b> ซีรีส์ <span style='color:#6B6E75'>(" +
+      nSku + " รายการ)</span>";
+
+    $("#grid").className = "sgrid" + (view === "rows" ? " rows" : "");
+    $("#grid").innerHTML = slice.length ? slice.map(card).join("")
+      : '<div class="empty" style="grid-column:1/-1">' +
+        "<p><b>ไม่พบสินค้าที่ตรงกับตัวกรองทั้งหมด</b></p>" +
+        "<p style='color:#6B6E75;font-size:13.5px'>ลองเอาตัวกรองที่แคบที่สุดออก เช่น ขนาด หรือระยะท่อ</p>" +
+        '<button class="btn btn-ghost btn-sm" onclick="document.getElementById(\'clrAll\').click()">ล้างตัวกรองทั้งหมด</button></div>';
+
+    $("#pgnote").textContent = gs.length
+      ? "แสดง " + ((page - 1) * per + 1) + "–" + Math.min(page * per, gs.length) + " จาก " + gs.length + " ซีรีส์"
+      : "";
+    $("#pager").innerHTML = pages > 1 ? pagerHTML(pages) : "";
+
+    /* ตัวกรอง */
+    $("#facets").innerHTML = facetHTML(false);
+    $("#facetsM").innerHTML = facetHTML(true);
+    var nAct = Object.keys(sel).reduce(function (a, k) { return a + (sel[k] || []).length; }, 0);
+    $("#clrAll").hidden = !nAct;
+    $("#mFilN").hidden = !nAct; $("#mFilN").textContent = nAct;
+
+    /* chip ตัวกรองที่ใช้งาน */
+    var ac = $("#achips"); ac.hidden = !nAct;
+    if (nAct) {
+      ac.innerHTML = '<span class="lbl">กำลังกรอง:</span>' + FAC.map(function (f) {
+        return (sel[f.key] || []).map(function (v) {
+          return '<button class="achip" data-rm="' + f.key + '|' + v + '">' +
+            "<span>" + f.label + "</span><b>" + v + "</b><span class='x'>×</span></button>";
+        }).join("");
+      }).join("") + '<button class="aclear" id="clrAll2">ล้างทั้งหมด</button>';
+    }
+    sync();
+  }
+
+  function pagerHTML(pages) {
+    var h = '<button data-p="' + (page - 1) + '"' + (page === 1 ? " disabled" : "") + ">‹ ก่อนหน้า</button>";
+    var list = [];
+    for (var i = 1; i <= pages; i++)
+      if (i === 1 || i === pages || Math.abs(i - page) <= 1) list.push(i);
+      else if (list[list.length - 1] !== "…") list.push("…");
+    list.forEach(function (i) {
+      h += i === "…" ? '<span class="el">…</span>'
+        : '<button data-p="' + i + '"' + (i === page ? ' class="on"' : "") + ">" + i + "</button>";
+    });
+    return h + '<button data-p="' + (page + 1) + '"' + (page === pages ? " disabled" : "") + ">ถัดไป ›</button>";
+  }
+
+  function sync() {
+    var b = $("#cmpbar");
+    b.classList.toggle("on", cmp.length > 0);
+    $("#cmpList").innerHTML = cmp.map(function (id) {
+      var s = C.bySeries(id);
+      return '<span class="ci"><img src="' + img(s.img) + '" alt=""><span>' + s.name +
+        '</span><button data-uncmp="' + id + '">×</button></span>';
+    }).join("");
+    $("#cmpHint").textContent = cmp.length < 2 ? "เลือกอีก " + (2 - cmp.length) + " รายการ" :
+      "เทียบได้สูงสุด 4 รายการ";
+    $("#cmpGo").disabled = cmp.length < 2;
+    var u = "#?cat=" + cat + "&sort=" + sortBy +
+      (Object.keys(sel).length ? "&f=" + encodeURIComponent(JSON.stringify(sel)) : "");
+    try { history.replaceState(null, "", u); } catch (e) { location.hash = u.slice(1); }
+  }
+
+  /* ---------- events ---------- */
+  document.addEventListener("change", function (e) {
+    var t = e.target;
+    if (t.dataset.f) {
+      var k = t.dataset.f, v = t.value;
+      sel[k] = sel[k] || [];
+      var i = sel[k].indexOf(v);
+      if (t.checked) { if (i < 0) sel[k].push(v); } else if (i >= 0) sel[k].splice(i, 1);
+      if (!sel[k].length) delete sel[k];
+      page = 1; render();
+    }
+    if (t.dataset.cmp) {
+      var id = t.dataset.cmp, j = cmp.indexOf(id);
+      if (t.checked) { if (cmp.length >= 4) { t.checked = false; CL.toast("เปรียบเทียบได้สูงสุด 4 รายการ"); return; }
+        if (j < 0) cmp.push(id); } else if (j >= 0) cmp.splice(j, 1);
+      sync();
+    }
+    if (t.name === "ms") { sortBy = t.value; page = 1; $("#sort").value = sortBy;
+      $("#shSort").classList.remove("on"); render(); }
+  });
+
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("[data-h],[data-more],[data-rm],[data-p],[data-uncmp],[data-close]");
+    if (!t) return;
+    if (t.dataset.h != null) { t.parentNode.classList.toggle("open"); return; }
+    if (t.dataset.more) { var fx = t.previousElementSibling; fx.hidden = !fx.hidden;
+      t.textContent = fx.hidden ? t.textContent.replace("ซ่อน", "+ ดูอีก") : "ซ่อน"; return; }
+    if (t.dataset.rm) { var p = t.dataset.rm.split("|"); var a = sel[p[0]] || [];
+      var i = a.indexOf(p[1]); if (i >= 0) a.splice(i, 1); if (!a.length) delete sel[p[0]];
+      page = 1; render(); return; }
+    if (t.dataset.p) { page = +t.dataset.p; render();
+      window.scrollTo({top: $(".rbar").offsetTop - 70, behavior: "smooth"}); return; }
+    if (t.dataset.uncmp) { cmp.splice(cmp.indexOf(t.dataset.uncmp), 1);
+      $$("[data-cmp]").forEach(function (c) { if (c.dataset.cmp === t.dataset.uncmp) c.checked = false; });
+      sync(); return; }
+    if (t.hasAttribute("data-close")) { t.closest(".sheet").classList.remove("on"); }
+  });
+
+  function clear() { sel = {}; page = 1; render(); }
+  $("#clrAll").onclick = clear; $("#mClr").onclick = clear;
+  document.addEventListener("click", function (e) { if (e.target.id === "clrAll2") clear(); });
+
+  $("#sort").onchange = function () { sortBy = this.value; page = 1; render(); };
+  $("#per").onchange = function () { per = +this.value; page = 1; render(); };
+  $("#vGrid").onclick = function () { view = "grid"; this.classList.add("on");
+    $("#vRows").classList.remove("on"); render(); };
+  $("#vRows").onclick = function () { view = "rows"; this.classList.add("on");
+    $("#vGrid").classList.remove("on"); render(); };
+  $("#mFil").onclick = function () { $("#shFil").classList.add("on"); };
+  $("#mSort").onclick = function () { $("#shSort").classList.add("on"); };
+  $("#cmpGo").onclick = function () {
+    CL.toast("หน้าเปรียบเทียบ " + cmp.length + " รายการ — อยู่ในขั้นออกแบบ");
+  };
+
+  /* ---------- หัวเรื่อง + แถบประเภท ---------- */
+  CL.mount("Products");
+  $("#icFil").innerHTML = ICON("filter");
+  $("#icSort").innerHTML = ICON("sort");
+  $("#vGrid").innerHTML = ICON("grid");
+  $("#vRows").innerHTML = ICON("rows");
+  $("#crumb").innerHTML = '<a href="index.html">หน้าแรก</a> › <a href="list.html">สินค้าทั้งหมด</a> › ' +
+    "<span>" + MAIN.filter(function (m) { return m.id === cat; })[0].label + "</span>";
+  $("#hEyebrow").textContent = HERO.eyebrow;
+  $("#hTitle").textContent = HERO.title;
+  $("#hLede").textContent = HERO.lede;
+  $("#hCover").src = img(HERO.cover);
+
+  /* ชั้นที่ 1 — หมวดหลัก 3 หมวด */
+  $("#mainbarIn").innerHTML = MAIN.map(function (m) {
+    return '<a href="list.html?cat=' + m.id + '" class="' + (m.id === cat ? "on" : "") + '">' +
+      ICON(m.ic) + m.label + "</a>";
+  }).join("") + '<span class="here">คุณอยู่ในหมวด <b>' +
+    MAIN.filter(function (m) { return m.id === cat; })[0].label + "</b></span>";
+
+  /* ชั้นที่ 2 — หมวดย่อยของหมวดที่เลือกอยู่ */
+  var subKey = cat === "tile" ? "pattern" : "kind";
+  var subFac = FAC.filter(function (f) { return f.key === subKey; })[0];
+  var subs = subFac ? optionsOf(subFac) : [];
+  $("#typebarIn").innerHTML =
+    '<a href="#" data-tab="' + subKey + '|*" class="' + (!(sel[subKey] || []).length ? "on" : "") + '">' +
+    "ทั้งหมด</a>" + subs.map(function (v) {
+      return '<a href="#" data-tab="' + subKey + "|" + v + '" class="' +
+        ((sel[subKey] || []).indexOf(v) >= 0 ? "on" : "") + '">' +
+        (cat === "tile" ? v.replace("กระเบื้อง", "").trim() : v.replace("สุขภัณฑ์", "").trim()) + "</a>";
+    }).join("");
+  $("#typebarIn").addEventListener("click", function (e) {
+    var a = e.target.closest("[data-tab]"); if (!a) return;
+    e.preventDefault();
+    var p = a.dataset.tab.split("|"), key = p[0], v = p[1];
+    if (v === "*") delete sel[key];
+    else {
+      sel[key] = ((sel[key] || []).indexOf(v) >= 0) ? [] : [v];
+      if (!sel[key].length) delete sel[key];
+    }
+    $$("#typebarIn [data-tab]").forEach(function (x) { x.classList.remove("on"); });
+    if (sel[key]) a.classList.add("on");
+    else $("#typebarIn [data-tab$='|*']").classList.add("on");
+    page = 1; render();
+  });
+
+  $("#sort").innerHTML = sortHTML();
+  $("#sortM").innerHTML = sortMobile();
+
+  $("#seo").innerHTML = cat === "tile" ? seoTile() : cat === "accessory" ? seoAcc() : seoSan();
+  function seoAcc() {
+    return "<h2>อุปกรณ์ห้องน้ำ เลือกจากประเภทก่อน แล้วค่อยเลือกสี</h2>" +
+      "<p>อุปกรณ์ห้องน้ำเป็นของชิ้นเล็กที่คนมักรู้อยู่แล้วว่าต้องการอะไร เช่น ตะขอแขวน หรือราวจับนิรภัย " +
+      "ลำดับตัวกรองจึงเริ่มที่ <b>ประเภทอุปกรณ์</b> ตามด้วย <b>สีผิวเคลือบ</b> เพราะต้องเข้าชุดกับก๊อกและ" +
+      "สุขภัณฑ์เดิมในห้อง แล้วจึงเป็น <b>วัสดุ</b> ซึ่งตัดสินเรื่องสนิมในที่เปียก " +
+      "และ <b>วิธีติดตั้ง</b> สำหรับคนที่อยู่บ้านเช่าหรือไม่อยากเจาะผนังกระเบื้อง</p>" +
+      '<div class="lk"><a href="list.html?cat=accessory">อุปกรณ์ห้องน้ำทั้งหมด</a>' +
+      '<a href="list.html?cat=sanitary">สุขภัณฑ์</a><a href="list.html?cat=tile">กระเบื้อง</a></div>';
+  }
+  function seoTile() {
+    return "<h2>เลือกกระเบื้องอย่างไรให้ไม่ต้องรื้อ</h2>" +
+      "<p>ลำดับการกรองในหน้านี้เรียงตามลำดับที่คนเลือกกระเบื้องจริง ๆ คือเริ่มจาก <b>งบต่อตารางเมตร</b> " +
+      "เพราะกระเบื้องซื้อเป็นปริมาณ ส่วนต่าง 100 บาทต่อตารางเมตร คูณ 40 ตารางเมตรก็กลายเป็น 4,000 บาท " +
+      "ถัดมาคือ <b>ลวดลาย</b> และ <b>ผิวสัมผัส</b> ซึ่งเป็นสิ่งที่ตอบได้โดยไม่ต้องมีความรู้ช่าง " +
+      "แล้วจึงเป็น <b>ค่าต้านทานความลื่น (R)</b> ที่ตามมาจากผิวสัมผัสโดยตรง</p>" +
+      "<p>ตัวกรองอย่าง <b>ความหนา</b> และ <b>ฉลากเขียว</b> อยู่ล่างสุดเพราะเป็นตัวกรองของผู้รับเหมาและงานที่ต้องยื่น" +
+      "คะแนนอาคารเขียว ไม่ใช่คำถามแรกของเจ้าของบ้าน ส่วน <b>ขนาด</b> จัดกลุ่มตามการใช้งาน " +
+      "(ขนาดมาตรฐาน / ขนาดใหญ่ / ลายไม้ / กระเบื้องผนัง) ไม่ได้เรียงตามตัวเลข เพราะ 20x120 กับ 120x120 " +
+      "คือสินค้าสองโลกที่ไม่ควรอยู่ติดกัน</p>" +
+      '<div class="lk"><a href="list.html?cat=tile">กระเบื้องทั้งหมด</a>' +
+      '<a href="list.html?cat=sanitary">สุขภัณฑ์</a><a href="index.html">หน้าแรก</a></div>';
+  }
+  function seoSan() {
+    return "<h2>ระยะท่อ (Rough-in) สำคัญกว่าราคา</h2>" +
+      "<p>สุขภัณฑ์ซื้อชิ้นเดียวและติดตั้งกับท่อที่มีอยู่แล้ว ลำดับตัวกรองจึงสลับกับกระเบื้องทั้งหมด " +
+      "<b>ประเภทการติดตั้ง</b> มาก่อนเพราะเป็นทางแยกที่ย้อนกลับไม่ได้ — โถแขวนผนังต้องมีถังน้ำฝังในผนัง " +
+      "ซึ่งหมายถึงต้องทุบผนัง ส่วน <b>ระยะท่อ</b> และ <b>ชนิดท่อ S-Trap / P-Trap</b> " +
+      "คือด่านความเข้ากันได้ที่ตัดสินว่าสินค้าใช้ได้หรือใช้ไม่ได้เลย ไม่ใช่เรื่องชอบหรือไม่ชอบ</p>" +
+      "<p><b>ราคา</b> จึงอยู่ล่างสุด ตรงข้ามกับหน้ากระเบื้อง เพราะการกรองด้วยราคาก่อนจะทำให้ลูกค้าเห็นรุ่นที่ถูกใจ" +
+      "แต่ติดตั้งกับท่อเดิมไม่ได้ ซึ่งนำไปสู่การคืนสินค้าและค่าช่างที่เสียเปล่า " +
+      "วิธีวัดระยะท่อ: วัดจากผนังด้านหลังถึงกลางท่อน้ำทิ้งที่พื้น</p>" +
+      '<div class="lk"><a href="list.html?cat=sanitary">สุขภัณฑ์ทั้งหมด</a>' +
+      '<a href="list.html?cat=tile">กระเบื้อง</a><a href="index.html">หน้าแรก</a></div>';
+  }
+
+  render();
+})();
+</script>
+</body>
+</html>

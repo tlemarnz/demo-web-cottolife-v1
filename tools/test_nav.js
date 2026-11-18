@@ -1,0 +1,31 @@
+const { chromium } = require('/opt/node-tools/node_modules/playwright-core');
+let fail=0,pass=0;
+const ok=(c,m,x)=>{if(c){pass++;console.log('  ok  '+m)}else{fail++;console.log('  FAIL '+m+(x!==undefined?' → '+JSON.stringify(x):''))}};
+(async()=>{
+  const b=await chromium.launch({executablePath:'/opt/pw-browsers/chromium-1243/chrome-linux64/chrome',args:['--no-sandbox']});
+  const p=await b.newPage({viewport:{width:1440,height:1000}});
+  const errs=[],broken=[];
+  p.on('pageerror',e=>errs.push('PE '+e.message)); p.on('console',m=>{if(m.type()==='error')errs.push(m.text())});
+  p.on('response',r=>{if(!r.ok()&&r.request().resourceType()==='image')broken.push(r.url())});
+
+  await p.goto('file:///home/claude/site/index.html',{waitUntil:'networkidle'});
+  ok(await p.locator('.pcard').count()===6,'หน้าแรกมีสินค้าขายดี 6 รายการ');
+  ok(await p.locator('.cat').count()===7,'มี 7 หมวด');
+  await p.locator('.hero-cta a').first().click(); await p.waitForTimeout(400);
+  ok(p.url().includes('cat=tile'),'หน้าแรก → หน้ากระเบื้อง');
+  await p.locator('.scard h3 a').first().click(); await p.waitForTimeout(400);
+  ok(p.url().includes('detail.html'),'การ์ด category → หน้าสินค้า');
+  await p.locator('.crumb a').nth(1).click(); await p.waitForTimeout(400);
+  ok(p.url().includes('list.html'),'breadcrumb กลับหน้า category ได้');
+  await p.goto('file:///home/claude/site/detail.html?s=soft-opera',{waitUntil:'networkidle'});
+  const before=await p.locator('.price-main b').textContent();
+  await p.locator('.vtab a[data-sku]').first().click(); await p.waitForTimeout(400);
+  ok(await p.locator('.price-main b').textContent()!==before,'เลือกรุ่นอื่นจากตารางซีรีส์แล้วราคาเปลี่ยน');
+  await p.locator('.rel .pcard').first().click(); await p.waitForTimeout(400);
+  ok(p.url().includes('detail.html'),'สินค้าใกล้เคียงกดไปต่อได้');
+  ok(errs.length===0,'ไม่มี console error',errs.slice(0,4));
+  ok(broken.length===0,'ไม่มีรูปเสีย',broken.slice(0,3));
+  await b.close();
+  console.log('\n'+(fail?'FAILED '+fail+' / ผ่าน '+pass:'ผ่านทั้งหมด '+pass+' ข้อ'));
+  process.exit(fail?1:0);
+})();

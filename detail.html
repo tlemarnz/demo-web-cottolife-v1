@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>สินค้า | COTTO LiFE</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="assets/detail.css">
+</head>
+<body>
+<div id="hdr"></div>
+<div class="wrap"><nav class="crumb" id="crumb"></nav></div>
+
+<div class="wrap">
+  <div class="pdp">
+    <div class="gal">
+      <div class="thumbs" id="gThumbs"></div>
+      <div class="galmain">
+        <div class="main"><img id="gMain" alt=""><span class="badge-n" id="gBadge" hidden>ใหม่</span></div>
+        <div class="gal-btns" id="galBtns"></div>
+      </div>
+    </div>
+    <div class="info" id="info"></div>
+  </div>
+
+  <div class="tabs" id="tabs"></div>
+  <div id="panels"></div>
+  <div class="rel" id="rel"></div>
+</div>
+
+<div class="sbar" id="sbar"><div class="wrap">
+  <div class="p"><b id="sbP"></b><span id="sbN"></span></div>
+  <button class="btn btn-primary" id="sbBtn">เพิ่มลงตะกร้า</button>
+</div></div>
+
+<div id="ftr"></div>
+<div id="toast"></div>
+
+<script src="assets/icons.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  var $ = CL.$, $$ = CL.$$, money = CL.money, img = CL.img, C = CATALOG;
+
+  function params() {
+    var s = location.search.slice(1) || location.hash.replace(/^#\??/, ""), o = {};
+    s.split("&").forEach(function (p) { if (!p) return; var i = p.indexOf("=");
+      o[decodeURIComponent(p.slice(0, i))] = decodeURIComponent(p.slice(i + 1)); });
+    return o;
+  }
+  var P = params();
+  var S = (P.s && C.bySeries(P.s)) || (P.sku && C.bySku(P.sku) && C.bySeries(C.bySku(P.sku).seriesId)) || C.series[0];
+  var K = (P.sku && C.bySku(P.sku)) || S.skus.filter(function (k) { return k.stock > 0; })[0] || S.skus[0];
+  var isTile = S.cat === "tile", isAcc = S.cat === "accessory", isSan = S.cat === "sanitary";
+  var UNIT = S.cat === "tile" ? "กล่อง" : S.cat === "accessory" ? "ชิ้น" : "ชุด";
+  var gi = 0, tab = 0, qty = 1, wideM = 4, longM = 4.5, waste = 10, grout = 1, roughPick = null;
+  var bundleSel = {};
+  (S.cat === "tile" ? C.bundle : C.bundleSan).forEach(function (b, i) { bundleSel[i] = b.checked; });
+
+  CL.mount("Products");
+  $("#crumb").innerHTML = '<a href="index.html">หน้าแรก</a> › <a href="list.html?cat=' + S.cat + '">' +
+    (isTile ? "กระเบื้อง" : isAcc ? "อุปกรณ์ห้องน้ำ" : "สุขภัณฑ์") +
+    '</a> › <a href="list.html?cat=' + S.cat + "&pattern=" +
+    encodeURIComponent(S.pattern) + '">' + S.pattern + "</a> › <span>" + S.name + "</span>";
+  document.title = S.name + " | COTTO LiFE";
+
+  /* ============ แกลเลอรี ============ */
+  function shots() {
+    return isTile
+      ? [[K.img, "หน้าแผ่น"], ["lay-" + K.tex, "ลายต่อเนื่อง"],
+         [S.usage && S.usage.indexOf("พื้น") >= 0 ? "room-living" : "room-bath", "ในห้อง"],
+         ["room-kitchen", "ในห้อง 2"], [K.img, "ผิวใกล้"]]
+      : isAcc
+      ? [[K.img, "ตัวสินค้า"], ["room-bath", "ในห้อง"], [K.img, "มุมข้าง"], ["room-bedroom", "บรรยากาศ"]]
+      : [[K.img, "ตัวสินค้า"], ["room-bath", "ในห้อง"], ["san-exploded", "ชิ้นส่วน"],
+         [K.img, "มุมข้าง"], ["room-bedroom", "บรรยากาศ"]];
+  }
+  function gallery() {
+    var g = shots();
+    $("#gMain").src = img(g[gi][0]);
+    $("#gMain").alt = S.name + " — " + g[gi][1];
+    $("#gBadge").hidden = !S["new"];
+    $("#gThumbs").innerHTML = g.map(function (t, i) {
+      return '<button class="' + (i === gi ? "on" : "") + '" data-g="' + i + '" aria-label="' + t[1] + '">' +
+        '<img src="' + img(t[0]) + '" alt=""><span class="tl">' + t[1] + "</span></button>";
+    }).join("");
+    var ICON = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+      'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      '<path d="M3 10.5 12 4l9 6.5"/><path d="M5.5 9.6V19a1 1 0 0 0 1 1h11a1 1 0 0 0 1-1V9.6"/>' +
+      '<path d="M9.2 20v-5.2h5.6V20"/></svg>';
+    $("#galBtns").innerHTML = isTile
+      ? '<button class="btn btn-dark" id="tryRoom">' + ICON + "ลองปูในห้องคุณ</button>" : "";
+  }
+
+  /* ============ ตัวเลือกรุ่น ============ */
+  function variantsFor(attr, val) {
+    return S.skus.filter(function (k) {
+      if (k[attr] !== val) return false;
+      return ["finish", "size", "color", "finLabel"].every(function (a) {
+        return a === attr || k[a] === K[a] || k[a] === undefined; });
+    });
+  }
+  function pick(attr, val) {
+    var cand = variantsFor(attr, val);
+    if (!cand.length) cand = S.skus.filter(function (k) { return k[attr] === val; });
+    if (cand.length) { K = cand.filter(function (k) { return k.stock > 0; })[0] || cand[0];
+      gi = 0; roughPick = null; draw(); }
+  }
+  function optGroup(label, attr, hint) {
+    var vals = [], seen = {};
+    S.skus.forEach(function (k) { if (k[attr] != null && !seen[k[attr]]) { seen[k[attr]] = 1; vals.push(k[attr]); } });
+    if (vals.length < 2) return "";
+    return '<div class="optrow"><div class="lab">' + label + (hint ? "<span>" + hint + "</span>" : "") +
+      "</div><div class='opts'>" + vals.map(function (v) {
+        var cand = variantsFor(attr, v), off = !cand.length;
+        var k0 = cand[0] || S.skus.filter(function (x) { return x[attr] === v; })[0];
+        var sub = "";
+        var sw = (attr === "color" && C.facets.tile[4].swatch[v]) ? C.facets.tile[4].swatch[v]
+               : (attr === "finLabel" && C.facets.accessory[1].swatch[v]) ? C.facets.accessory[1].swatch[v] : "";
+        var dot = sw ? '<span class="dot" style="background:' + sw + '"></span>' : "";
+        return '<button class="opt' + (K[attr] === v ? " on" : "") + (off ? " off" : "") + '" data-o="' +
+          attr + "|" + v + '"' + (off ? " disabled" : "") + ">" + dot +
+          (attr === "finish" ? C.finish[v].label : v) + sub + "</button>";
+      }).join("") + "</div></div>";
+  }
+
+  /* ============ ฝั่งขวา ============ */
+  function chipsOf() {
+    return (isTile
+      ? [(K.slip !== "-" ? "กันลื่น " + K.slip + " · " : "") + C.finish[K.finish].label,
+         K.usage.join(" / "), K.env, K.green ? "ฉลากเขียว" : ""]
+      : isAcc
+      ? [K.kind, K.material, K.mount, "รับประกัน " + K.warranty]
+      : [K.rate !== "-" ? K.rate : K.dim, K.rough !== "-" ? "ท่อ " + K.trap.replace("-Trap", "") +
+         " · " + K.rough : "", (K.tech || [])[0] || "", "รับประกัน " + K.warranty])
+      .filter(Boolean).map(function (c) { return '<span class="chip">' + c + "</span>"; }).join("");
+  }
+  function boxes() {
+    var area = (wideM || 0) * (longM || 0);
+    if (!area) return 0;
+    return Math.ceil(area * (1 + waste / 100) / K.sqmPerBox);
+  }
+
+  function info() {
+    var price = isTile ? K.pricePerSqm : K.price;
+    var was   = isTile ? K.wasPerSqm : K.priceWas;
+    var h = '<div class="brand">' + K.brand + " · " + S.name + " Series</div>" +
+      "<h1>" + (isTile ? K.pattern + " " + K.size + " " + S.name + " " + C.finish[K.finish].label
+                       : S.kind + " " + S.name + " " + (K.label || "")) + "</h1>" +
+      '<div class="skuline">SKU ' + K.sku + "</div>" +
+      '<div class="chips">' + chipsOf() + "</div>";
+
+    /* ราคา — ขีดราคาปกติทั้งต่อ ตร.ม. และต่อกล่อง */
+    h += '<div class="price-main"><b>' + money(price) + '</b><span class="u">/ ' +
+      (isTile ? "ตร.ม." : isAcc ? "ชิ้น" : "ชุด") + "</span>" +
+      (was ? '<span class="was">' + money(was) + '</span><span class="off">ลด ' + K.off + "%</span>" : "") +
+      "</div>";
+    h += '<div class="price-sub">' + (isTile
+      ? (K.wasPerBox ? '<span class="was">' + money(K.wasPerBox) + "</span>" : "") +
+        "<b>" + money(K.pricePerBox) + "</b> / กล่อง (1 กล่อง = " + K.sqmPerBox + " ตร.ม. · " +
+        K.pcsPerBox + " แผ่น) · รวม VAT แล้ว"
+      : isAcc ? "ราคารวม VAT แล้ว · ราคาต่อชิ้น · " + K.material + " · " + K.mount
+      : "ราคารวม VAT แล้ว · ยังไม่รวมค่าติดตั้ง") + "</div>";
+
+    if (isTile) {
+      h += optGroup("ผิว", "finish");
+      h += optGroup("ขนาด", "size");
+      h += optGroup("สี", "color");
+      h += calcHTML();
+    } else if (isAcc) {
+      h += optGroup("สี / ผิวเคลือบ", "finLabel");
+    } else {
+      h += optGroup("รุ่น", "label", "ต่างกันที่ระบบกดและระยะท่อ");
+      h += inboxHTML();
+      h += roughHTML();
+    }
+
+    /* สถานะสินค้า */
+    if (K.stock > 0) h += '<div class="stock-line">' + CL.stockChip(K) +
+      ("<span>" + (K.stock + " " + UNIT) +
+        " · ส่งภายใน 3–5 วัน</span><span>·</span><a href='#' data-toast='รายละเอียดการจัดส่ง (ตัวอย่าง)'>" +
+        "ดูรายละเอียดการจัดส่ง</a>") + "</div>";
+
+    if (K.stock > 0) {
+      h += '<div class="buyrow"><div class="qty">' +
+        '<button id="qm" aria-label="ลดจำนวน">−</button>' +
+        '<input id="qn" type="number" min="1" value="' + qty + '" aria-label="จำนวน">' +
+        '<button id="qp" aria-label="เพิ่มจำนวน">+</button></div>' +
+        '<button class="btn btn-primary btn-lg" id="addCart">เพิ่มลงตะกร้า</button></div>' +
+        '<div class="calc-note">สั่ง ' + qty + " " + UNIT + " = " +
+        money(qty * (isTile ? K.pricePerBox : K.price)) + "</div>" +
+        '<div class="buy2"><button class="btn btn-ghost" id="copyLink">คัดลอกลิงก์นี้</button>' +
+        '<button class="btn btn-line" id="lineBtn">ถามผ่าน LINE</button></div>';
+    } else {
+      h += '<div class="oos"><b>สินค้าหมดชั่วคราว</b>' +
+        "ออนไลน์ยังไม่เปิดรับจองในรอบผลิตนี้ กรุณาติดต่อฝ่ายขายหรือสาขาใกล้บ้าน " +
+        "หรือเลือกรุ่นอื่นในซีรีส์เดียวกัน" +
+        '<br><a class="oos-link" href="#" data-jump="series">ดูรุ่นอื่นที่มีสินค้า ›</a></div>' +
+        '<div class="buy2"><button class="btn btn-line-solid btn-lg btn-block" id="lineBtn">' +
+        "สอบถามผ่าน LINE</button></div>";
+    }
+    $("#info").innerHTML = h;
+  }
+
+  function calcHTML() {
+    var b = boxes(), area = (wideM || 0) * (longM || 0);
+    return '<div class="calc"><h4>คำนวณจำนวนกล่องที่ต้องสั่ง</h4>' +
+      '<div class="calc-in">' +
+        '<div><label for="cw">กว้าง (ม.)</label><input id="cw" type="number" min="0" step="0.1" value="' +
+          (wideM || "") + '"></div>' +
+        '<div><label for="cl">ยาว (ม.)</label><input id="cl" type="number" min="0" step="0.1" value="' +
+          (longM || "") + '"></div>' +
+        '<div class="wst"><label for="cwst">เผื่อตัด</label><select id="cwst">' +
+          [[5, "5% ปูตรง"], [10, "10% ทั่วไป"], [12, "12% ปูทแยง"]].map(function (o) {
+            return '<option value="' + o[0] + '"' + (waste === o[0] ? " selected" : "") + ">" + o[1] + "</option>";
+          }).join("") + "</select></div></div>" +
+      '<div class="calc-res"><div class="eq">' +
+        (b ? "= <b>" + b + " กล่อง</b> <span>(" + (b * K.sqmPerBox).toFixed(2) + " ตร.ม.) ≈ " +
+             money(b * K.pricePerBox) + "</span>"
+           : "<span>กรอกขนาดห้องเพื่อคำนวณ</span>") + "</div>" +
+        '<button class="btn btn-ghost btn-sm" id="useQty"' + (b ? "" : " disabled") + ">ใช้จำนวนนี้</button></div>" +
+      '<div class="calc-note">พื้นที่ ' + (area ? area.toFixed(2) : "0") + " ตร.ม. เผื่อตัด " + waste +
+      "% แนะนำสั่งครั้งเดียวจบ เพราะกระเบื้องคนละล็อตอาจมีเฉดสีต่างกัน</div></div>";
+  }
+
+  function inboxHTML() {
+    var ps = C.parts[S.id] || [];
+    return '<div class="inbox"><b>ในชุดนี้ประกอบด้วย ' + K.pieces + " ชิ้น</b><p>" +
+      ps.slice(0, 5).map(function (p) { return p.name.split(" ")[0] + " " + (p.name.split(" ")[1] || ""); })
+        .join(" · ") + ' · <a href="#" data-jump="parts">ดูทั้งหมด ›</a></p></div>';
+  }
+  function roughHTML() {
+    if (!K.rough || K.rough === "-") return "";
+    var opts = ["305 มม.", "200 มม.", "220 มม.", "ไม่แน่ใจ"];
+    var res;
+    if (roughPick === null) res = "รุ่นนี้ออกแบบสำหรับระยะท่อ <b>" + K.rough + "</b> ชนิดท่อ <b>" + K.trap + "</b>";
+    else if (roughPick === "ไม่แน่ใจ")
+      res = "ไม่เป็นไร เลือก “ขอให้ช่างมาวัดให้” ตอนสั่งซื้อได้ หรือทักไลน์ส่งรูปห้องน้ำมาให้เราดู";
+    else if (roughPick === K.rough) res = '<span class="ok">✓ ใช้ได้</span> ระยะท่อตรงกับรุ่นนี้พอดี';
+    else {
+      var alt = C.skus.filter(function (k) { return k.cat === "sanitary" && k.rough === roughPick; });
+      res = '<span class="bad">✗ ใช้ไม่ได้</span> รุ่นนี้ต้องใช้ ' + K.rough + " แต่ของคุณคือ " + roughPick +
+        (alt.length ? "<br>รุ่นที่ใช้ได้: " + alt.map(function (k) {
+          return '<a href="detail.html?sku=' + k.sku + '">' + k.series + " " + k.label + "</a>"; }).join(" · ")
+          : "<br>ยังไม่มีรุ่นที่ตรงระยะนี้ แนะนำให้ปรึกษาฝ่ายขาย");
+    }
+    return '<div class="rough"><b>ก่อนสั่งซื้อ เช็กระยะท่อน้ำทิ้ง (rough-in)</b>' +
+      '<div class="row">' + opts.map(function (o) {
+        return '<button class="rb' + (roughPick === o ? " on" : "") + '" data-r="' + o + '">' + o + "</button>";
+      }).join("") + "</div>" +
+      '<div class="res" id="rout">' + res + "</div>" +
+      '<a class="how" href="#" data-toast="วิธีวัดระยะท่อ (ตัวอย่าง)">ไม่รู้วิธีวัด? ดูวิธีวัด ›</a></div>';
+  }
+
+  /* ============ แท็บและเนื้อหาด้านล่าง ============ */
+  function tabDefs() {
+    return isTile
+      ? [["ภาพรวม", pOverview], ["สเปก", pSpec], ["ดาวน์โหลด", pDownload], ["วิธีปู", pHowto]]
+      : isAcc
+      ? [["ภาพรวม", pOverview], ["สเปก", pSpec], ["ดาวน์โหลด", pDownload]]
+      : [["ภาพรวม", pOverview], ["สเปก", pSpec], ["อะไหล่ที่ใช้ร่วมกันได้ในรุ่นนี้", pParts],
+         ["ติดตั้ง", pInstall], ["ดาวน์โหลด", pDownload]];
+  }
+
+  function featBoxes() {           /* คุณสมบัติสินค้า — ไม่มี มอก. ในชุดนี้ */
+    return isTile
+      ? [[K.slip === "-" ? "สำหรับผนัง" : "กันลื่น " + K.slip,
+          K.slip === "-" ? "ไม่ใช้ปูพื้น" : (parseInt(K.slip.slice(1), 10) >= 11 ? "พื้นเปียก / กลางแจ้ง" : "พื้นภายในทั่วไป")],
+         [K.env, K.absorb < 0.5 ? "พอร์ซเลน ดูดซึมต่ำ" : "เซรามิก สำหรับภายใน"],
+         [K.usage.join(" + "), "ใช้ได้ตามที่ระบุ"],
+         [K.patt + " แพทเทิร์น", "ลายไม่ซ้ำเมื่อปูต่อเนื่อง"]]
+      : isAcc
+      ? [[K.kind, "ประเภทอุปกรณ์"], [K.finLabel, "สี / ผิวเคลือบ"],
+         [K.material, "วัสดุ ทนความชื้น"], ["รับประกัน " + K.warranty, "ตามเงื่อนไขผู้ผลิต"]]
+      : [[K.rate, "ปริมาณน้ำต่อการกด"], [K.rough, "ระยะท่อ · " + K.trap],
+         [(K.tech || [])[0] || K.flush, "ระบบ " + K.flush],
+         ["รับประกัน " + K.warranty, "ตามเงื่อนไขผู้ผลิต"]];
+  }
+
+  function descText() {
+    return isTile
+      ? ["<b>" + S.name + "</b> เป็น" + S.sub + " ผิว" + C.finish[K.finish].label + " " +
+         C.finish[K.finish].desc + " เหมาะกับ" + K.use +
+         " ขนาด " + K.size + " ซม. ความหนา " + K.thick + " มม. ให้ความรู้สึกเรียบต่อเนื่องเมื่อปูเป็นพื้นที่กว้าง",
+         "มีทั้งหมด " + K.patt + " หน้าลาย เมื่อปูต่อเนื่องจึงไม่เห็นลายซ้ำในระยะสายตา " +
+         "ค่าความต่างของเฉดสีอยู่ที่ " + K.shade + " " +
+         ({V1:"แต่ละแผ่นสีสม่ำเสมอ", V2:"แต่ละแผ่นต่างกันเล็กน้อยตามธรรมชาติของวัสดุ",
+           V3:"แต่ละแผ่นต่างกันชัดเจน ควรคละกล่องตอนปู",
+           V4:"แต่ละแผ่นต่างกันมาก เน้นความเป็นธรรมชาติ"}[K.shade] || "")]
+      : isAcc
+      ? ["<b>" + S.name + "</b> " + S.sub + " ผลิตจาก" + K.material +
+         " ผิวเคลือบ" + K.finLabel + " ขนาด " + K.dim,
+         "ติดตั้งแบบ" + K.mount + " " +
+         (K.mount === "ติดกาว" ? "ไม่ต้องเจาะผนัง เหมาะกับบ้านเช่าหรือผนังกระเบื้องที่ไม่อยากทำรูเพิ่ม"
+          : K.mount === "เจาะผนัง" ? "มาพร้อมพุกและสกรูสำหรับผนังปูนและผนังกระเบื้อง"
+          : "ต้องมีรูเจาะบนเคาน์เตอร์หรืออ่างอยู่แล้ว") +
+         " รับประกัน " + K.warranty]
+      : ["<b>" + S.name + "</b> " + S.sub + " ใช้ระบบชำระล้างแบบ " + K.flush +
+         " ใช้น้ำ " + K.rate + " ต่อการกดหนึ่งครั้ง รูปทรงโถแบบ " + K.bowl +
+         " ขนาดตัวเครื่อง " + K.dim,
+         "ออกแบบสำหรับระยะท่อ " + K.rough + " ชนิดท่อ " + K.trap +
+         (K.trap === "S-Trap" ? " (ท่อออกที่พื้น)" : " (ท่อออกที่ผนัง)") +
+         " ก่อนสั่งซื้อควรวัดระยะจากผนังด้านหลังถึงกลางท่อน้ำทิ้งให้ตรงกันก่อน " +
+         ((K.tech || []).length ? "มาพร้อม" + K.tech.join(" · ") : "")];
+  }
+
+  function specRows(full) {
+    var r = isTile
+      ? [["ขนาด", K.size + " ซม."], ["ความหนา", K.thick + " มม."],
+         ["ผิว", C.finish[K.finish].label + " (" + C.finish[K.finish].en + ")"],
+         ["จำนวนแพทเทิร์น", K.patt + " ลาย"],
+         ["เฉดสี", K.shade, "ยิ่งค่าสูง แต่ละแผ่นยิ่งต่างกันมาก"],
+         ["การดูดซึมน้ำ", (K.absorb < 0.5 ? "น้อยกว่า 0.5%" : K.absorb + "%"),
+          K.absorb < 0.5 ? "จัดเป็นพอร์ซเลน" : "จัดเป็นเซรามิก"],
+         ["ตัดขอบ", (K.size === "60x120" || K.size === "120x120") ? "ลบมุม (Rectified) ปูร่องชิดได้"
+                                                                  : "ขอบธรรมชาติ (Non-rectified)"],
+         ["พื้นที่ต่อกล่อง", K.sqmPerBox + " ตร.ม. (" + K.pcsPerBox + " แผ่น)"]]
+      : isAcc
+      ? [["ประเภท", K.kind], ["สี / ผิวเคลือบ", K.finLabel], ["วัสดุ", K.material],
+         ["วิธีติดตั้ง", K.mount], ["ขนาด (ก×ล×ส)", K.dim], ["การรับประกัน", K.warranty]]
+      : [["ประเภท", K.kind], ["ปริมาณน้ำ", K.rate], ["ระบบชำระล้าง", K.flush],
+         ["ระยะท่อ", K.rough, "วัดจากผนังถึงกลางท่อน้ำทิ้ง"],
+         ["ชนิดท่อ", K.trap, K.trap === "S-Trap" ? "ท่อออกที่พื้น" : "ท่อออกที่ผนัง"],
+         ["รูปทรงโถ", K.bowl], ["ขนาด (ก×ล×ส)", K.dim], ["ฝารองนั่ง", "Soft close (ในชุด)"],
+         ["จำนวนชิ้นส่วน", K.pieces + " ชิ้น"]];
+    if (full) r = r.concat(isAcc ? [["แบรนด์", K.brand], ["รหัสสินค้า", K.sku]] : isTile
+      ? [["สี", K.color], ["ลวดลาย", K.pattern], ["ค่าต้านทานความลื่น", K.slip],
+         ["การใช้งาน", K.use], ["พื้นที่ใช้งาน", K.env],
+         ["แบรนด์", K.brand], ["รหัสสินค้า", K.sku]]
+      : [["สี", (K.colors || [K.color]).join(" / ")], ["เทคโนโลยี", (K.tech || []).join(" · ")],
+         ["การรับประกัน", K.warranty], ["แบรนด์", K.brand], ["รหัสสินค้า", K.sku]]);
+    return r;
+  }
+  function specTable(full) {
+    return '<table class="spec">' + specRows(full).map(function (r) {
+      return "<tr><td>" + r[0] + "</td><td><b>" + r[1] + "</b>" +
+        (r[2] ? '<span class="hint">' + r[2] + "</span>" : "") + "</td></tr>"; }).join("") + "</table>" +
+      '<div class="tis"><img src="' + img(isTile ? "tis-tile" : "tis-san") +
+      '" alt="ใบรับรองมาตรฐาน" class="cert" data-toast="ดูใบรับรองฉบับเต็ม (ภาพจำลอง)">' +
+      '<div class="tx"><div class="hd"><span class="mk">มอก.</span><b>' +
+      String(K.tis || "—").replace(/^มอก\.\s*/, "") + "</b></div>" +
+      '<span class="sub">ผ่านการรับรองมาตรฐานผลิตภัณฑ์อุตสาหกรรม · ' +
+      'ใบอนุญาตเลขที่ ท 999-9/9999</span>' +
+      '<a href="#" data-toast="ดูใบรับรองฉบับเต็ม (ภาพจำลอง)">ดูใบรับรอง ›</a></div></div>';
+  }
+
+  function seriesTable() {
+    return '<h3 class="mt" id="series">รุ่นอื่นในซีรีส์ ' + S.name + " (" + S.skus.length + " รายการ)</h3>" +
+      '<table class="vtab"><tr><th>รหัส</th><th>' +
+      (isTile ? "ผิว" : isAcc ? "สี / ผิวเคลือบ" : "การกด") + "</th><th>" +
+      (isTile ? "ขนาด" : isAcc ? "วัสดุ" : "ระยะท่อ") + '</th><th class="hide-m">สถานะ</th><th>ราคา' +
+      (isTile ? " / ตร.ม." : "") + "</th><th></th></tr>" +
+      S.skus.map(function (k) {
+        var pr = isTile ? k.pricePerSqm : k.price, wz = isTile ? k.wasPerSqm : k.priceWas;
+        return "<tr" + (k.sku === K.sku ? ' class="on"' : "") + "><td>" + k.sku + "</td><td>" +
+          (isTile ? C.finish[k.finish].label + (S.colors.length > 1 ? " · " + k.color : "") : k.label) +
+          "</td><td>" + (isTile ? k.size + " ซม." : isAcc ? k.material : k.rough) +
+          '</td><td class="hide-m">' +
+          CL.stockChip(k) + '</td><td class="px">' + money(pr) +
+          (wz ? "<s>" + money(wz) + "</s>" : "") + "</td><td>" +
+          (k.sku === K.sku ? '<span class="cur">กำลังดู</span>'
+            : '<a href="#" data-sku="' + k.sku + '">ดูรุ่นนี้ ›</a>') + "</td></tr>";
+      }).join("") + "</table>";
+  }
+
+  function pOverview() {
+    var h = '<h3>คุณสมบัติสินค้า</h3><div class="feat">' + featBoxes().map(function (f) {
+      return "<div><b>" + f[0] + "</b><span>" + f[1] + "</span></div>"; }).join("") + "</div>";
+    h += '<div class="two-col"><div><h3>รายละเอียดสินค้า</h3>' +
+      descText().map(function (t) { return '<p class="desc">' + t + "</p>"; }).join("") +
+      (isSan ? '<h3 class="mt">สี</h3><div class="sw-row">' +
+        (S.colors || []).map(function (c, i) {
+          return '<button class="' + (i === 0 ? "on" : "") + '" data-toast="สี' + c + '">' +
+            '<i style="background:' + (c === "ขาวมุก" ? "#EFE7D8" : "#F4F4F2") + '"></i><span>' +
+            c + "</span></button>"; }).join("") + "</div>" : "") +
+      '</div><div><h3>' + (isTile ? "สเปกและบรรจุภัณฑ์" : "สเปกและขนาด") + "</h3>" +
+      specTable(false) + "</div></div>" + seriesTable();
+    return h;
+  }
+  function pSpec() {
+    return '<h3>ข้อมูลจำเพาะทั้งหมด</h3><div class="two-col"><div>' + specTable(true) + "</div>" +
+      '<div><h3 style="margin-top:0">หมายเหตุ</h3>' +
+      '<p class="desc">ค่าที่แสดงเป็นค่ามาตรฐานจากโรงงาน อาจมีความคลาดเคลื่อนได้ตามเกณฑ์การผลิต ' +
+      (isTile ? "กระเบื้องแต่ละล็อตอาจมีเฉดสีต่างกัน แนะนำให้สั่งครั้งเดียวและคละกล่องตอนปู"
+       : isAcc ? "สีผิวเคลือบที่เห็นบนจอกับของจริงอาจต่างกันเล็กน้อย แนะนำให้ดูของจริงที่โชว์รูมถ้าต้องเข้าชุดกับของเดิม"
+       : "ควรตรวจระยะท่อและชนิดท่อในห้องน้ำจริงก่อนสั่งซื้อทุกครั้ง") + "</p></div></div>";
+  }
+  function pBundle() {
+    return "<h2>สินค้าที่ใช้ด้วยกัน</h2>" +
+      '<p class="desc" style="margin-bottom:14px">' + (isTile
+        ? "วัสดุที่ต้องใช้คู่กับกระเบื้อง คำนวณจากขนาดห้องที่กรอกไว้ด้านบน ปรับได้ตามหน้างาน"
+        : "อุปกรณ์ที่ช่างมักเปลี่ยนพร้อมกันในครั้งเดียว เพื่อไม่ต้องรื้อซ้ำ") + "</p>" +
+      (isTile ? '<div style="font-size:12.5px;font-weight:600;padding-bottom:7px">สียาแนว</div>' +
+        '<div class="grout">' + C.grout.map(function (g, i) {
+          return '<button class="' + (i === grout ? "on" : "") + '" data-gr="' + i + '">' +
+            '<span class="sw3" style="background:' + g[1] + '"></span>' + g[0] + "</button>"; }).join("") +
+        "</div>" : "") +
+      '<div class="bundle" id="bundle"></div>';
+  }
+  function pParts() {
+    var ps = C.parts[S.id] || [];
+    return '<h3 id="parts">อะไหล่ที่ใช้ร่วมกันได้ในรุ่นนี้ (' + K.pieces + " ชิ้น)</h3>" +
+      '<p class="desc" style="margin-bottom:14px">สั่งซื้อแยกชิ้นได้ทุกรายการ ' +
+      "ใช้รหัสอะไหล่เวลาติดต่อฝ่ายขายหรือศูนย์บริการ</p>" +
+      '<div class="plist">' + ps.map(function (p) {
+        return '<div class="pitem"><img src="' + img(p.img) + '" alt="' + p.name + '" loading="lazy">' +
+          '<div class="tx"><b>' + p.name + '</b><div class="code">รหัส ' + p.code + "</div>" +
+          (p.inStock
+            ? '<div class="buyline"><span class="px">' + money(p.price) + "</span>" +
+              '<button class="btn btn-ghost btn-sm" data-part="' + p.code + "|" + p.name +
+              '">' + ICON("cart") + "ใส่ตะกร้า</button></div>"
+            : '<div class="buyline"><span class="no">สั่งผลิต</span>' +
+              '<button class="btn btn-ghost btn-sm" data-toast="แจ้งเตือนเมื่ออะไหล่เข้า (ตัวอย่าง)">' +
+              "แจ้งเตือน</button></div>") + "</div></div>";
+      }).join("") + "</div>";
+  }
+  function pInstall() {
+    var st = ["<b>วัดระยะท่อ</b> จากผนังด้านหลังถึงกลางท่อน้ำทิ้งที่พื้น ต้องได้ " + K.rough,
+      "<b>ปิดวาล์วน้ำ</b> และรื้อสุขภัณฑ์เดิมออก ขูดซิลิโคนและยางเดิมให้หมด",
+      "<b>วางแนวและทดลองประกอบ</b> โดยยังไม่ยิงซิลิโคน เพื่อเช็กว่าตรงท่อจริง",
+      "<b>ติดตั้งและยึดฐาน</b> ใส่ยางรอง ขันน็อตให้แน่นเท่ากันทั้งสองข้าง",
+      "<b>ต่อสายน้ำดีและทดสอบ</b> เปิดน้ำ กดทดสอบ 3 ครั้ง ตรวจรอยรั่วรอบฐาน"];
+    return '<h3>ขั้นตอนการติดตั้ง</h3><div class="two-col"><div><ol class="steps">' +
+      st.map(function (s) { return "<li>" + s + "</li>"; }).join("") + "</ol></div><div>" +
+      (S.install ? '<div class="inbox"><b>ให้ช่างของเราติดตั้งให้</b><p>ค่าบริการ ' +
+        money(S.install.price) + " ต่อจุด เฉพาะ" + S.install.area +
+        " รวมรื้อของเดิมและทิ้งซาก รับประกันงานติดตั้ง 1 ปี</p>" +
+        '<button class="btn btn-dark btn-sm" style="margin-top:11px" data-toast="จองช่างติดตั้ง (ตัวอย่าง)">' +
+        "จองช่างติดตั้ง</button></div>" : "") + "</div></div>";
+  }
+  function pHowto() {
+    var st = ["<b>เตรียมพื้น</b> ให้ได้ระดับและสะอาด ความต่างไม่เกิน 3 มม. ต่อ 2 เมตร",
+      "<b>วางแผนแนวปู</b> หาจุดกึ่งกลางห้อง เพื่อให้แผ่นที่ต้องตัดอยู่ริมผนังเท่า ๆ กัน",
+      "<b>คละกล่อง</b> เปิดพร้อมกัน 3–4 กล่องแล้วสลับหยิบ เพื่อให้เฉดสีกระจายสม่ำเสมอ",
+      "<b>ปูด้วยกาวซีเมนต์</b> หวีร่องให้ทั่ว กดแผ่นให้แนบ เคาะไล่ฟองอากาศ ใช้ตัวเว้นร่อง " +
+        ((K.size === "60x120" || K.size === "120x120") ? "1.5–2 มม." : "2–3 มม."),
+      "<b>ยาแนวหลัง 24 ชม.</b> เช็ดคราบส่วนเกินทันทีก่อนยาแนวแห้ง"];
+    return '<h3>วิธีปูและข้อควรระวัง</h3><div class="two-col"><div><ol class="steps">' +
+      st.map(function (s) { return "<li>" + s + "</li>"; }).join("") + "</ol></div>" +
+      '<div><div class="inbox"><b>ข้อควรระวัง</b><p>' +
+      "กระเบื้องคนละล็อตอาจมีเฉดสีต่างกัน ควรสั่งครั้งเดียวให้พอและเผื่อไว้อย่างน้อย 1 กล่อง " +
+      "สำหรับซ่อมในอนาคต · ผิว" + C.finish[K.finish].label + " " + C.finish[K.finish].desc +
+      "</p></div></div></div>";
+  }
+  function pDownload() {
+    return '<h3>เอกสารและไฟล์</h3><div class="dl">' +
+      [["แคตตาล็อกซีรีส์ (PDF)", "12 หน้า · 3.4 MB"],
+       ["สเปกชีตทางเทคนิค (PDF)", "2 หน้า · 480 KB"],
+       [isTile ? "ไฟล์เท็กซ์เจอร์ 3D (ZIP)" : "ไฟล์ CAD / BIM (ZIP)", "4 ไฟล์ · 18 MB"]]
+      .map(function (d) { return '<button data-toast="เริ่มดาวน์โหลด (ตัวอย่าง)"><b>' + d[0] +
+        "</b><span>" + d[1] + "</span></button>"; }).join("") + "</div>";
+  }
+
+  function below() {
+    var defs = tabDefs();
+    $("#tabs").innerHTML = defs.map(function (d, i) {
+      return '<button class="' + (i === tab ? "on" : "") + '" data-t="' + i + '">' + d[0] + "</button>";
+    }).join("");
+    $("#panels").innerHTML = defs.map(function (d, i) {
+      return '<div class="panel"' + (i === tab ? "" : " hidden") + ">" + d[1]() + "</div>"; }).join("") +
+      '<section class="together" id="together">' + pBundle() + "</section>";
+    bundle();
+
+    var rel = C.series.filter(function (x) {
+      return x.id !== S.id && x.cat === S.cat && (isTile ? x.pattern === S.pattern : true); });
+    if (rel.length < 4) rel = C.series.filter(function (x) { return x.id !== S.id && x.cat === S.cat; });
+    $("#rel").innerHTML = "<h2>สินค้าใกล้เคียง</h2><div class='grid-p'>" +
+      rel.slice(0, 6).map(function (x) { return CL.productCard(x.skus[0]); }).join("") + "</div>";
+  }
+
+  function bundle() {
+    var el = $("#bundle"); if (!el) return;
+    var list = isTile ? C.bundle : C.bundleSan;
+    var area = (wideM || 0) * (longM || 0), tot = 0;
+    el.innerHTML = list.map(function (b, i) {
+      var qn, note;
+      if (isTile) {
+        qn = !area ? 0 : b.perEdge ? Math.ceil(((wideM + longM) * 2) / 2.5)
+                                   : Math.ceil(area * b.perSqm / (b.pack || 1));
+        note = area ? qn + " " + b.unit + (i === 1 ? " · สี" + C.grout[grout][0] : "") : "กรอกขนาดห้องก่อน";
+      } else { qn = b.qty; note = b.sub + " · " + qn + " " + b.unit; }
+      var sum = qn * b.price;
+      if (bundleSel[i]) tot += sum;
+      return '<label><input type="checkbox" data-b="' + i + '"' + (bundleSel[i] ? " checked" : "") +
+        '><span class="nm">' + b.name + "<small>" + note + '</small></span><span class="px">' +
+        (qn ? money(sum) : "—") + "</span></label>";
+    }).join("") + '<div class="tot"><span>รวมสินค้าที่เลือก</span><b>' + money(tot) +
+      '</b></div><div style="padding:0 0 13px"><button class="btn btn-ghost btn-sm btn-block" ' +
+      'data-toast="เพิ่มสินค้าที่เลือกลงตะกร้า (ตัวอย่าง)">เพิ่มที่เลือกทั้งหมดลงตะกร้า</button></div>';
+  }
+
+  /* ============ events ============ */
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("[data-g],[data-o],[data-sku],[data-gr],[data-t],[data-r],[data-toast],[data-jump],[data-part]," +
+      "#qm,#qp,#useQty,#addCart,#copyLink,#lineBtn,#tryRoom");
+    if (!t) return;
+    if (t.dataset.g != null) { gi = +t.dataset.g; gallery(); return; }
+    if (t.dataset.o) { var p = t.dataset.o.split("|"); pick(p[0], p[1]); return; }
+    if (t.dataset.sku) { e.preventDefault(); K = C.bySku(t.dataset.sku); gi = 0; qty = 1; roughPick = null;
+      draw(); window.scrollTo({top: 0, behavior: "smooth"}); return; }
+    if (t.dataset.gr) { grout = +t.dataset.gr;
+      $$("[data-gr]").forEach(function (b) { b.classList.toggle("on", b === t); }); bundle(); return; }
+    if (t.dataset.t) { tab = +t.dataset.t; below(); return; }
+    if (t.dataset.r) { roughPick = t.dataset.r; info(); return; }
+    if (t.dataset.jump) { e.preventDefault();
+      tab = t.dataset.jump === "parts" ? 2 : 0; below();
+      var el = $("#" + t.dataset.jump) || $("#series");
+      if (el) el.scrollIntoView({behavior: "smooth", block: "start"}); return; }
+    if (t.id === "qm") { qty = Math.max(1, qty - 1); info(); syncBar(); return; }
+    if (t.id === "qp") { qty++; info(); syncBar(); return; }
+    if (t.id === "useQty") { var b = boxes(); if (b) { qty = b; info(); syncBar();
+      CL.toast("ตั้งจำนวนเป็น " + b + " กล่องแล้ว"); } return; }
+    if (t.id === "addCart") { CL.CART.add(qty);
+      CL.toast("เพิ่ม " + S.name + " " + qty + " " + UNIT + " ลงตะกร้าแล้ว"); return; }
+    if (t.id === "copyLink") {
+      var u = location.href;
+      if (navigator.clipboard) navigator.clipboard.writeText(u)["catch"](function () {});
+      CL.toast("คัดลอกลิงก์สินค้านี้แล้ว"); return; }
+    if (t.id === "lineBtn") { CL.toast("เปิดแชต LINE @COTTOLIFE (ตัวอย่าง)"); return; }
+    if (t.id === "tryRoom") { CL.toast(isTile ? "Room Viewer — ลองปูในห้องคุณ (ตัวอย่าง)"
+                                              : "ภาพแยกชิ้น (ตัวอย่าง)"); return; }
+    if (t.id === "allImg") { CL.toast(isTile ? "แกลเลอรีภาพทั้งหมด (ตัวอย่าง)" : "ไฟล์ CAD / PDF (ตัวอย่าง)"); return; }
+    if (t.dataset.part) { var pp = t.dataset.part.split("|");
+      CL.CART.add(1); CL.toast("เพิ่ม " + pp[1] + " ลงตะกร้าแล้ว"); return; }
+    if (t.dataset.toast) { e.preventDefault(); CL.toast(t.dataset.toast); }
+  });
+
+  document.addEventListener("input", function (e) {
+    var t = e.target;
+    if (t.id === "cw" || t.id === "cl") {
+      if (t.id === "cw") wideM = +t.value || 0; else longM = +t.value || 0;
+      var box = t.closest(".calc"), b = boxes();
+      box.querySelector(".eq").innerHTML = b
+        ? "= <b>" + b + " กล่อง</b> <span>(" + (b * K.sqmPerBox).toFixed(2) + " ตร.ม.) ≈ " +
+          money(b * K.pricePerBox) + "</span>"
+        : "<span>กรอกขนาดห้องเพื่อคำนวณ</span>";
+      box.querySelector("#useQty").disabled = !b;
+      box.querySelector(".calc-note").textContent = "พื้นที่ " +
+        ((wideM * longM) || 0).toFixed(2) + " ตร.ม. เผื่อตัด " + waste +
+        "% แนะนำสั่งครั้งเดียวจบ เพราะกระเบื้องคนละล็อตอาจมีเฉดสีต่างกัน";
+      bundle();
+    }
+    if (t.id === "qn") { qty = Math.max(1, +t.value || 1); syncBar();
+      var n = $(".buyrow + .calc-note");
+      if (n) n.textContent = "สั่ง " + qty + " " + UNIT + " = " +
+        money(qty * (isTile ? K.pricePerBox : K.price)); }
+  });
+  document.addEventListener("change", function (e) {
+    var t = e.target;
+    if (t.id === "cwst") { waste = +t.value; info(); bundle(); }
+    if (t.dataset.b) { bundleSel[t.dataset.b] = t.checked; bundle(); }
+  });
+
+  window.addEventListener("scroll", function () {
+    $("#sbar").classList.toggle("on", window.scrollY > 560);
+  });
+  function syncBar() {
+    $("#sbP").textContent = money(isTile ? K.pricePerSqm : K.price) + (isTile ? " /ตร.ม." : " /" + UNIT);
+    $("#sbN").textContent = S.name + " · " + (isTile ? K.size + " ซม." : (K.label || "")) +
+      (K.stock > 0 ? " · " + qty + (" " + UNIT) : "");
+    $("#sbBtn").textContent = K.stock > 0 ? "เพิ่มลงตะกร้า" : "สอบถามผ่าน LINE";
+    $("#sbBtn").className = "btn " + (K.stock > 0 ? "btn-primary" : "btn-line-solid");
+  }
+  $("#sbBtn").onclick = function () {
+    if (K.stock > 0) { CL.CART.add(qty); CL.toast("เพิ่มลงตะกร้าแล้ว"); }
+    else CL.toast("เปิดแชต LINE @COTTOLIFE (ตัวอย่าง)");
+  };
+
+  function draw() {
+    gallery(); info(); below(); syncBar();
+    try { history.replaceState(null, "", "#?sku=" + K.sku); } catch (e) {}
+  }
+  draw();
+})();
+</script>
+</body>
+</html>

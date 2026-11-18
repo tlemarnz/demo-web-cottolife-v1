@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>COTTO LiFE — Design Confidence Built on Trusted Home Solutions</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="assets/app.css">
+<link rel="stylesheet" href="assets/home.css">
+</head>
+<body>
+<div id="hdr"></div>
+
+<section class="hero">
+  <img class="hero-bg" id="heroImg" alt="">
+  <div class="wrap">
+    <div class="hero-txt">
+      <h1>Design Confidence<br>Built on Trusted<br>Home Solutions</h1>
+      <p>กระเบื้อง สุขภัณฑ์ และอุปกรณ์ห้องน้ำจากโรงงานในเครือ SCG Decor
+         พร้อมเครื่องมือช่วยคำนวณและทีมที่ปรึกษาตลอดการตกแต่ง</p>
+      <div class="hero-cta">
+        <a class="btn btn-primary btn-lg" href="list.html?cat=tile">Explore Products</a>
+        <button class="btn btn-on-dark btn-lg" id="roomViewer">Try Room Viewer</button>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="trust"><div class="wrap" id="trust"></div></section>
+
+<section class="sec"><div class="wrap">
+  <div class="sec-head">
+    <h2>What Are You Planning Today?</h2>
+    <a class="link-all" href="list.html?cat=tile">View all</a>
+  </div>
+  <div class="cats" id="cats"></div>
+</div></section>
+
+<section class="sec"><div class="wrap">
+  <div class="sec-head"><h2>Promotion</h2><a class="link-all" href="list.html?cat=tile&sort=price-asc">View all</a></div>
+  <div class="promos" id="promos"></div>
+</div></section>
+
+<section class="sec"><div class="wrap">
+  <div class="sec-head"><h2>Recommended Products</h2><a class="link-all" href="list.html?cat=tile&sort=popular">View all</a></div>
+  <div class="grid-p" id="best"></div>
+</div></section>
+
+<section class="sec insp"><div class="wrap">
+  <div class="sec-head"><h2>Get Inspired</h2><a class="link-all" href="list.html?cat=tile">View all</a></div>
+  <div class="insp-big" id="inspBig"></div>
+  <div class="rooms" id="rooms"></div>
+</div></section>
+
+<section class="sec"><div class="wrap">
+  <div class="sec-head"><h2>Smart Tools &amp; Support</h2></div>
+  <div class="tools" id="tools"></div>
+</div></section>
+
+<section class="sec"><div class="wrap">
+  <div class="sec-head"><h2>Buying Guides</h2><a class="link-all" href="#" data-toast="บทความทั้งหมด (ตัวอย่าง)">View all</a></div>
+  <div class="tips" id="tips"></div>
+</div></section>
+
+<section class="cta-band"><div class="wrap">
+  <div>
+    <h2>Need Help Planning Your Project?</h2>
+    <p>ทีมที่ปรึกษาช่วยดูแบบห้อง ประเมินจำนวนวัสดุ และจัดราคาสำหรับงานโครงการตั้งแต่ 300 ตร.ม. ขึ้นไป
+       ตอบกลับภายใน 1 วันทำการ</p>
+  </div>
+  <button class="btn btn-on-dark btn-lg" data-toast="ฟอร์มติดต่อทีมที่ปรึกษา (ตัวอย่าง)">Talk to Our Team</button>
+</div></section>
+
+<section class="about"><div class="wrap">
+  <div class="about-tx">
+    <h2>About Cotto Life</h2>
+    <p>ช่องทางจำหน่ายอย่างเป็นทางการของกระเบื้องและสุขภัณฑ์ในเครือ SCG Decor
+       ทั้งแบรนด์ COTTO, SOSUCO และ CAMPANA สินค้าทุกชิ้นส่งตรงจากโรงงาน
+       มีการรับประกันตามเงื่อนไขของผู้ผลิต และมีโชว์รูมให้เข้าชมสินค้าจริงก่อนตัดสินใจ</p>
+    <button class="btn btn-ghost" data-toast="หน้าเกี่ยวกับเรา (ตัวอย่าง)">Learn more</button>
+  </div>
+  <ul class="stores" id="stores"></ul>
+</div></section>
+
+<section class="sec"><div class="wrap">
+  <div class="sec-head"><h2>FAQs</h2></div>
+  <div class="faq" id="faq"></div>
+</div></section>
+
+<section class="support"><div class="wrap" id="support"></div></section>
+
+<div id="ftr"></div>
+<div id="toast"></div>
+
+<script src="assets/icons.js"></script>
+<script src="assets/data.js"></script>
+<script src="assets/app.js"></script>
+<script>
+(function () {
+  var $ = CL.$, img = CL.img, money = CL.money, C = CATALOG, I = ICON;
+  CL.mount("Products");
+  $("#heroImg").src = img("room-hero");
+
+  /* Trust strip */
+  $("#trust").innerHTML = [
+    ["truck", "Free Shipping", "เมื่อซื้อครบ 20,000 บาท"],
+    ["box", "No Minimum Order", "สั่งได้ตั้งแต่ 1 กล่อง"],
+    ["card", "0% Installment", "ผ่อนได้นาน 10 เดือน"],
+    ["shield", "Product Warranty", "รับประกันตามเงื่อนไขผู้ผลิต"]
+  ].map(function (t) {
+    return "<div>" + I(t[0]) + "<div><b>" + t[1] + "</b><span>" + t[2] + "</span></div></div>";
+  }).join("");
+
+  /* What are you planning today — 7 tiles */
+  var CATS = [
+    ["New Arrivals", "สินค้าใหม่", "lay-calacatta-gold", "list.html?cat=tile&sort=new"],
+    ["Tile and Floor", "กระเบื้องปูพื้น", "room-living", "list.html?cat=tile"],
+    ["Wall", "กระเบื้องบุผนัง", "lay-gloss-white",
+     "list.html?cat=tile&pattern=" + encodeURIComponent("กระเบื้องสีพื้น")],
+    ["Bathroom", "สุขภัณฑ์และอุปกรณ์", "room-bath", "list.html?cat=sanitary"],
+    ["Accessories", "อุปกรณ์ห้องน้ำ", "acc-towelbar", "list.html?cat=accessory"],
+    ["Outdoor", "ภายนอกและลานจอดรถ", "room-outdoor",
+     "list.html?cat=tile&pattern=" + encodeURIComponent("กระเบื้องปูพื้นภายนอก")],
+    ["Bedroom", "ลายไม้สำหรับห้องนอน", "lay-oak-natural",
+     "list.html?cat=tile&pattern=" + encodeURIComponent("กระเบื้องลายไม้")]
+  ];
+  $("#cats").innerHTML = CATS.map(function (c) {
+    return '<a class="cat" href="' + c[3] + '"><img src="' + img(c[2]) + '" alt="' + c[0] +
+      '" loading="lazy"><span><b>' + c[0] + "</b><i>" + c[1] + "</i></span></a>";
+  }).join("");
+
+  /* Promotion */
+  var PROMO = [
+    ["ลดสูงสุด 25%", "กระเบื้องลายหินอ่อนทุกซีรีส์", "ถึง 31 ธ.ค. 2569", "lay-carrara-statuario",
+     "list.html?cat=tile&pattern=" + encodeURIComponent("กระเบื้องลายหินอ่อน")],
+    ["ส่งฟรีทั่วประเทศ", "เมื่อซื้อครบ 20,000 บาท ไม่จำกัดจำนวนกล่อง", "ตลอดเดือนนี้",
+     "room-kitchen", "list.html?cat=tile"],
+    ["สุขภัณฑ์ พร้อมติดตั้ง", "เพิ่มค่าติดตั้งเพียง 1,500 บาท", "เฉพาะกรุงเทพฯ และปริมณฑล",
+     "room-bath", "list.html?cat=sanitary"]
+  ];
+  $("#promos").innerHTML = PROMO.map(function (p) {
+    return '<a class="promo" href="' + p[4] + '"><img src="' + img(p[3]) + '" alt="" loading="lazy">' +
+      '<div class="pb"><b>' + p[0] + "</b><span>" + p[1] + "</span><i>" + p[2] + "</i></div></a>";
+  }).join("");
+
+  /* Recommended products */
+  var BEST = ["chicago", "petchnin", "myra", "glee", "freya"]
+    .map(function (id) { var s = C.bySeries(id); return s && s.skus[0]; }).filter(Boolean);
+  var have = {}; BEST.forEach(function (k) { have[k.seriesId] = 1; });
+  C.skus.filter(function (k) { return !have[k.seriesId] && k.stock > 0; })
+    .sort(function (a, b) { return b.sold - a.sold; })
+    .forEach(function (k) { if (BEST.length < 6 && !have[k.seriesId]) { have[k.seriesId] = 1; BEST.push(k); } });
+  $("#best").innerHTML = BEST.slice(0, 6).map(function (k) { return CL.productCard(k); }).join("");
+
+  /* Get Inspired — two large panels + thumbnail row */
+  $("#inspBig").innerHTML = [
+    ["Soft Minimal", "โทนขาวครีม ผิวด้าน สำหรับบ้านที่อยากให้ห้องดูกว้าง", "room-living",
+     "list.html?cat=tile&pattern=" + encodeURIComponent("กระเบื้องลายหินอ่อน")],
+    ["Warm Wood", "ลายไม้โทนอุ่น ใช้ได้ทั้งห้องนอนและห้องนั่งเล่น", "lay-oak-natural",
+     "list.html?cat=tile&pattern=" + encodeURIComponent("กระเบื้องลายไม้")]
+  ].map(function (p) {
+    return '<a class="ipanel" href="' + p[3] + '"><img src="' + img(p[2]) + '" alt="" loading="lazy">' +
+      "<div><b>" + p[0] + "</b><span>" + p[1] + "</span><em>Shop the collection " +
+      I("right") + "</em></div></a>";
+  }).join("");
+
+  var ROOMS = [["Living", "room-living"], ["Bathroom", "room-bath"], ["Kitchen", "room-kitchen"],
+               ["Bedroom", "room-bedroom"], ["Outdoor", "room-outdoor"]];
+  $("#rooms").innerHTML = ROOMS.map(function (r) {
+    return '<a class="room" href="list.html?cat=tile"><img src="' + img(r[1]) + '" alt="' + r[0] +
+      '" loading="lazy"><span>' + r[0] + "</span></a>";
+  }).join("");
+
+  /* Smart Tools & Support — 8 tiles */
+  var TOOLS = [
+    ["calc", "Tile Calculator", "บอกขนาดห้อง แล้วได้จำนวนกล่องพร้อมเผื่อตัด"],
+    ["ruler", "Rough-in Checker", "วัดระยะท่อ แล้วดูว่าสุขภัณฑ์รุ่นไหนใช้ได้"],
+    ["room", "Room Viewer", "ลองปูกระเบื้องในห้องตัวอย่าง"],
+    ["box", "Free Sample", "เลือกได้ 3 แบบ ส่งถึงบ้าน"],
+    ["tools", "Installation", "ช่างผ่านการอบรม รับประกันงาน 1 ปี"],
+    ["file", "E-Catalogue", "ไฟล์ PDF และสเปกสำหรับงานโครงการ"],
+    ["track", "Order Tracking", "ดูสถานะและรอบส่งของ"],
+    ["pin", "Find a Store", "โชว์รูม 5 สาขาทั่วประเทศ"]
+  ];
+  $("#tools").innerHTML = TOOLS.map(function (t) {
+    return '<button class="tool" data-toast="' + t[1] + ' (ตัวอย่าง)">' + I(t[0]) +
+      "<b>" + t[1] + "</b><span>" + t[2] + "</span></button>";
+  }).join("");
+
+  /* Buying Guides */
+  var TIPS = [
+    ["เลือกค่ากันลื่น R เท่าไรถึงพอ", "พื้นห้องน้ำเปียกควรอยู่ที่ R10 ขึ้นไป ส่วนระเบียงกลางแจ้งควรใช้ R11", "lay-outdoor-stone"],
+    ["วัดระยะท่อสุขภัณฑ์ด้วยตัวเอง", "วัดจากผนังด้านหลังถึงกลางท่อน้ำทิ้งที่พื้น ได้ 200 หรือ 305 มม.", "san-toilet-2"],
+    ["ซื้อกระเบื้องเผื่อกี่เปอร์เซ็นต์", "ปูตรงเผื่อ 5% ปูทแยงหรือห้องมีเสาเผื่อ 10–12%", "lay-terrazzo-sand"]
+  ];
+  $("#tips").innerHTML = TIPS.map(function (t) {
+    return '<a class="tip" href="#" data-toast="บทความ (ตัวอย่าง)"><img src="' + img(t[2]) +
+      '" alt="" loading="lazy"><div><b>' + t[0] + "</b><span>" + t[1] +
+      '</span><em>Read ' + I("right") + "</em></div></a>";
+  }).join("");
+
+  /* Stores */
+  var STORES = [["COTTO LiFE รัชดาภิเษก", "จ.–อา. 09:00–19:00"], ["COTTO LiFE บางนา กม.3", "จ.–อา. 09:00–19:00"],
+                ["COTTO LiFE เชียงใหม่", "จ.–ส. 09:00–18:00"], ["COTTO LiFE ขอนแก่น", "จ.–ส. 09:00–18:00"],
+                ["COTTO LiFE หาดใหญ่", "จ.–ส. 09:00–18:00"]];
+  $("#stores").innerHTML = STORES.map(function (s) {
+    return "<li>" + ICON("pin") + "<div><b>" + s[0] + "</b><span>" + s[1] +
+      '</span></div><a href="#" data-toast="แผนที่ (ตัวอย่าง)">Map</a></li>';
+  }).join("");
+
+  /* FAQs */
+  var FAQ = [
+    ["สั่งซื้อออนไลน์ได้เลยไหม", "ต้นแบบนี้ยังไม่เปิดชำระเงินออนไลน์ หน้าสินค้าจะให้ติดต่อฝ่ายขายหรือเข้าชมที่โชว์รูมแทน"],
+    ["กระเบื้องสั่งขั้นต่ำเท่าไร", "ขายเป็นกล่อง 1 กล่องเท่ากับ 1.44 ตร.ม. สำหรับขนาดมาตรฐาน ระบบจะคำนวณจำนวนกล่องให้จากขนาดห้องที่กรอก"],
+    ["สีจริงตรงกับที่เห็นบนจอไหม", "หน้าจอแต่ละเครื่องให้สีไม่เท่ากัน และกระเบื้องมีค่าความต่างของเฉดสี (V1–V4) จึงแนะนำให้ขอแผ่นตัวอย่างก่อนสั่งจำนวนมาก"],
+    ["ระยะท่อสุขภัณฑ์คืออะไร", "คือระยะจากผนังด้านหลังถึงกลางท่อน้ำทิ้งที่พื้น ส่วนใหญ่เป็น 200 หรือ 305 มม. ถ้าเลือกผิดจะติดตั้งไม่ได้"],
+    ["มีบริการติดตั้งไหม", "มีเฉพาะกรุงเทพฯ และปริมณฑล ค่าบริการเริ่มต้น 1,500 บาทต่อจุดสำหรับสุขภัณฑ์"]
+  ];
+  $("#faq").innerHTML = FAQ.map(function (f, i) {
+    return '<details class="acc"' + (i === 0 ? " open" : "") + "><summary>" + f[0] +
+      "</summary><p>" + f[1] + "</p></details>";
+  }).join("");
+
+  /* Support CTA */
+  $("#support").innerHTML =
+    '<div class="sup-tx"><h2>Still Have Questions?</h2>' +
+    "<p>ทักมาคุยกับทีมงานได้ทุกวัน จันทร์–เสาร์ 08:30–17:30</p></div>" +
+    '<div class="sup-btn">' +
+      '<button class="btn btn-line-solid btn-lg" data-toast="เปิดแชท LINE @COTTOLIFE (ตัวอย่าง)">' +
+        ICON("line") + "LINE OA @COTTOLIFE</button>" +
+      '<button class="btn btn-ghost btn-lg" data-toast="โทรหาเรา (ตัวอย่าง)">' +
+        ICON("phone") + "02-586-xxxx</button>" +
+    "</div>";
+
+  document.addEventListener("click", function (e) {
+    var t = e.target.closest("[data-toast],#roomViewer");
+    if (!t) return;
+    e.preventDefault();
+    CL.toast(t.id === "roomViewer" ? "เปิด Room Viewer (ตัวอย่าง)" : t.dataset.toast);
+  });
+})();
+</script>
+</body>
+</html>
