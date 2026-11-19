@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>สินค้าทั้งหมด | COTTO LiFE</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/app.css">
@@ -45,6 +47,7 @@
     <div class="rbar">
       <div class="rcount" id="rcount"></div>
       <div class="sp"></div>
+      <label class="instock"><input type="checkbox" id="onlyStock"><span>เฉพาะสินค้าพร้อมส่ง</span></label>
       <div class="sortsel">
         <label for="sort">เรียงลำดับ</label>
         <select id="sort"></select>
@@ -83,6 +86,7 @@
   <div class="sp">
     <div class="sh"><b>ค้นหาแบบที่ชอบ</b><button data-close>×</button></div>
     <div class="sbody">
+      <label class="instock mob"><input type="checkbox" id="onlyStockM"><span>เฉพาะสินค้าพร้อมส่ง</span></label>
       <div id="facetsM"></div>
     </div>
     <div class="sf">
@@ -133,6 +137,7 @@
   if (P.use) sel.use = [P.use];
   if (P.kind) sel.kind = [P.kind];
   var sortBy = P.sort || "featured";
+  var onlyStock = P.stock === "1";
   var per = 24, page = 1, view = "grid", cmp = [];
   var FAC = C.facets[cat], SORTS = C.sorts[cat];
 
@@ -173,7 +178,8 @@
   function pass(k, exceptKey) {
     return FAC.every(function (f) { return f.key === exceptKey || matchFacet(f, k); });
   }
-  function matched() { return POOL.filter(function (k) { return pass(k); }); }
+  function inStockOK(k) { return !onlyStock || k.stock > 0; }
+  function matched() { return POOL.filter(function (k) { return inStockOK(k) && pass(k); }); }
 
   function optionsOf(f) {
     if (f.options) return f.options.map(function (o) { return o.v; });
@@ -189,7 +195,7 @@
     return seen.sort(function (a, b) { return order[b] - order[a]; });
   }
   function countOf(f, v) {
-    var base = POOL.filter(function (k) { return pass(k, f.key); });
+    var base = POOL.filter(function (k) { return inStockOK(k) && pass(k, f.key); });
     return base.filter(function (k) {
       if (f.range) { var o = f.options.filter(function (x) { return x.v === v; })[0];
         var n = f.get(k); return o && n >= o.lo && n <= o.hi; }
@@ -347,14 +353,18 @@
     /* ตัวกรอง */
     $("#facets").innerHTML = facetHTML(false);
     $("#facetsM").innerHTML = facetHTML(true);
-    var nAct = Object.keys(sel).reduce(function (a, k) { return a + (sel[k] || []).length; }, 0);
+    var nAct = Object.keys(sel).reduce(function (a, k) { return a + (sel[k] || []).length; }, 0) +
+               (onlyStock ? 1 : 0);
     $("#clrAll").hidden = !nAct;
     $("#mFilN").hidden = !nAct; $("#mFilN").textContent = nAct;
 
     /* chip ตัวกรองที่ใช้งาน */
     var ac = $("#achips"); ac.hidden = !nAct;
     if (nAct) {
-      ac.innerHTML = '<span class="lbl">กำลังดู:</span>' + FAC.map(function (f) {
+      ac.innerHTML = '<span class="lbl">กำลังดู:</span>' +
+        (onlyStock ? '<button class="achip" data-rmstock="1"><span>สถานะ</span>' +
+          "<b>เฉพาะสินค้าพร้อมส่ง</b><span class='x'>×</span></button>" : "") +
+        FAC.map(function (f) {
         return (sel[f.key] || []).map(function (v) {
           return '<button class="achip" data-rm="' + f.key + '|' + v + '">' +
             "<span>" + f.label + "</span><b>" + v + "</b><span class='x'>×</span></button>";
@@ -388,7 +398,7 @@
     $("#cmpHint").textContent = cmp.length < 2 ? "เลือกอีก " + (2 - cmp.length) + " รายการ" :
       "เทียบได้สูงสุด 4 รายการ";
     $("#cmpGo").disabled = cmp.length < 2;
-    var u = "#?cat=" + cat + "&sort=" + sortBy +
+    var u = "#?cat=" + cat + "&sort=" + sortBy + (onlyStock ? "&stock=1" : "") +
       (Object.keys(sel).length ? "&f=" + encodeURIComponent(JSON.stringify(sel)) : "");
     try { history.replaceState(null, "", u); } catch (e) { location.hash = u.slice(1); }
   }
@@ -412,14 +422,22 @@
     }
     if (t.name === "ms") { sortBy = t.value; page = 1; $("#sort").value = sortBy;
       $("#shSort").classList.remove("on"); render(); }
+    if (t.id === "onlyStock" || t.id === "onlyStockM") {
+      onlyStock = t.checked; page = 1;
+      $("#onlyStock").checked = onlyStock; $("#onlyStockM").checked = onlyStock;
+      render();
+    }
   });
 
   document.addEventListener("click", function (e) {
-    var t = e.target.closest("[data-h],[data-more],[data-rm],[data-p],[data-uncmp],[data-close]");
+    var t = e.target.closest("[data-h],[data-more],[data-rm],[data-rmstock],[data-p],[data-uncmp],[data-close]");
     if (!t) return;
     if (t.dataset.h != null) { t.parentNode.classList.toggle("open"); return; }
     if (t.dataset.more) { var fx = t.previousElementSibling; fx.hidden = !fx.hidden;
       t.textContent = fx.hidden ? t.textContent.replace("ซ่อน", "+ ดูอีก") : "ซ่อน"; return; }
+    if (t.dataset.rmstock) { onlyStock = false;
+      $("#onlyStock").checked = false; $("#onlyStockM").checked = false;
+      page = 1; render(); return; }
     if (t.dataset.rm) { var p = t.dataset.rm.split("|"); var a = sel[p[0]] || [];
       var i = a.indexOf(p[1]); if (i >= 0) a.splice(i, 1); if (!a.length) delete sel[p[0]];
       page = 1; render(); return; }
@@ -431,7 +449,11 @@
     if (t.hasAttribute("data-close")) { t.closest(".sheet").classList.remove("on"); }
   });
 
-  function clear() { sel = {}; page = 1; render(); }
+  function clear() {
+    sel = {}; onlyStock = false; page = 1;
+    $("#onlyStock").checked = false; $("#onlyStockM").checked = false;
+    render();
+  }
   $("#clrAll").onclick = clear; $("#mClr").onclick = clear;
   document.addEventListener("click", function (e) { if (e.target.id === "clrAll2") clear(); });
 
@@ -493,6 +515,7 @@
     page = 1; render();
   });
 
+  $("#onlyStock").checked = onlyStock; $("#onlyStockM").checked = onlyStock;
   $("#sort").innerHTML = sortHTML();
   $("#sortM").innerHTML = sortMobile();
 

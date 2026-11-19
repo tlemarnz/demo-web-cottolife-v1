@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>สินค้า | COTTO LiFE</title>
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="apple-touch-icon" href="assets/img/apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="assets/app.css">
@@ -109,6 +111,16 @@
     if (cand.length) { K = cand.filter(function (k) { return k.stock > 0; })[0] || cand[0];
       gi = 0; roughPick = null; draw(); }
   }
+  /* หาสีประจำตัวเลือก โดยอ้างชื่อ facet ไม่ใช่ตำแหน่ง เพราะลำดับเปลี่ยนได้ */
+  function facetBy(c, key) {
+    return (C.facets[c] || []).filter(function (f) { return f.key === key; })[0];
+  }
+  function swatchOf(attr, v) {
+    var f = attr === "color" ? facetBy("tile", "color")
+          : attr === "finLabel" ? facetBy("accessory", "finLabel") : null;
+    return (f && f.swatch && f.swatch[v]) || "";
+  }
+
   function optGroup(label, attr, hint) {
     var vals = [], seen = {};
     S.skus.forEach(function (k) { if (k[attr] != null && !seen[k[attr]]) { seen[k[attr]] = 1; vals.push(k[attr]); } });
@@ -118,8 +130,7 @@
         var cand = variantsFor(attr, v), off = !cand.length;
         var k0 = cand[0] || S.skus.filter(function (x) { return x[attr] === v; })[0];
         var sub = "";
-        var sw = (attr === "color" && C.facets.tile[4].swatch[v]) ? C.facets.tile[4].swatch[v]
-               : (attr === "finLabel" && C.facets.accessory[1].swatch[v]) ? C.facets.accessory[1].swatch[v] : "";
+        var sw = swatchOf(attr, v);
         var dot = sw ? '<span class="dot" style="background:' + sw + '"></span>' : "";
         return '<button class="opt' + (K[attr] === v ? " on" : "") + (off ? " off" : "") + '" data-o="' +
           attr + "|" + v + '"' + (off ? " disabled" : "") + ">" + dot +

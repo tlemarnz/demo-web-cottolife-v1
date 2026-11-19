@@ -345,6 +345,19 @@ window.CATALOG = (function () {
                  สุขภัณฑ์เรียงตาม TOTO (ประเภทติดตั้ง → เทคโนโลยี → ความเข้ากันได้ของท่อ) */
   var FACETS = {
     tile: [
+      {key:"usemode", label:"การใช้งาน",
+       why:"คำถามแรกที่คนตอบได้ทันทีโดยไม่ต้องรู้อะไรเลย และตัดสินทั้งค่ากันลื่นและความหนาที่ต้องใช้",
+       options:[{v:"ตกแต่ง"},{v:"ปูพื้น"},{v:"ใช้ภายใน"},{v:"ใช้ภายนอก"},{v:"ปูผนัง"}],
+       multi:true,
+       get:function(k){
+         var o = [], u = k.usage || [], e = k.env || "";
+         if (u.indexOf("ผนัง") >= 0 && u.indexOf("พื้น") < 0) o.push("ตกแต่ง");
+         if (u.indexOf("พื้น") >= 0) o.push("ปูพื้น");
+         if (e.indexOf("ภายใน") >= 0) o.push("ใช้ภายใน");
+         if (e.indexOf("ภายนอก") >= 0) o.push("ใช้ภายนอก");
+         if (u.indexOf("ผนัง") >= 0) o.push("ปูผนัง");
+         return o;
+       }},
       {key:"priceBand", label:"ราคา", why:"ตัดตัวเลือกออกได้มากที่สุดในคลิกเดียว ลูกค้ามักมีงบต่อ ตร.ม. มาแล้ว",
        options:[{v:"1–299 บาท/ตร.ม.",lo:0,hi:299},{v:"300–499 บาท/ตร.ม.",lo:300,hi:499},
                 {v:"500–999 บาท/ตร.ม.",lo:500,hi:999},{v:"1,000 บาท/ตร.ม. ขึ้นไป",lo:1000,hi:1e9}],
@@ -361,8 +374,6 @@ window.CATALOG = (function () {
        get:function(k){ return k.color; }},
       {key:"size", label:"ขนาด (ซม.)", why:"จัดกลุ่มตามการใช้งาน ไม่เรียงตัวเลข เพราะรายการขนาดดิบอ่านไม่รู้เรื่อง",
        groups:SIZE_GROUPS, get:function(k){ return k.size; }},
-      {key:"use", label:"พื้นที่การใช้งาน", why:"ลูกค้าส่วนใหญ่เข้ามาจากหมวดที่บอกการใช้งานอยู่แล้ว จึงอยู่ล่างลงมา",
-       get:function(k){ return k.use; }},
       {key:"thickClass", label:"ความหนา", why:"ตัวกรองของผู้รับเหมางานภายนอก คนทั่วไปแทบไม่ใช้",
        get:function(k){ return k.thickClass; }}
     ],

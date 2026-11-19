@@ -10,15 +10,17 @@
 | `list.html?cat=tile` | รายการสินค้า — กระเบื้อง |
 | `list.html?cat=sanitary` | รายการสินค้า — สุขภัณฑ์ |
 | `list.html?cat=accessory` | รายการสินค้า — อุปกรณ์ห้องน้ำ |
-| `detail.html?s=carrara` | หน้าสินค้า (กระเบื้อง ลดราคา) |
-| `detail.html?s=hercules` | หน้าสินค้า (สุขภัณฑ์) |
-| `detail.html?s=tap-slim` | หน้าสินค้า (อุปกรณ์ห้องน้ำ) |
+| `detail.html?s=carrara` | หน้าสินค้า กระเบื้อง (มีส่วนลด) |
+| `detail.html?s=gloss` | หน้าสินค้า กระเบื้อง (หลายสี) |
+| `detail.html?s=hercules` | หน้าสินค้า สุขภัณฑ์ |
+| `detail.html?s=tap-slim` | หน้าสินค้า อุปกรณ์ห้องน้ำ |
 | `detail.html?sku=C02237` | หน้าสินค้า สถานะสินค้าหมด |
 
 ## โครงไฟล์
 
 ```
 index.html, list.html, detail.html   หน้าเว็บ
+favicon.ico                          ไอคอนบนแท็บเบราว์เซอร์
 assets/
   app.css      ส่วนกลาง — header, footer, ปุ่ม, ตัวแปรสี
   home.css     หน้าแรก
@@ -27,10 +29,10 @@ assets/
   app.js       header / footer / การ์ดสินค้า / ตะกร้า / toast
   data.js      ข้อมูลสินค้าทั้งหมด + นิยามตัวกรองและการเรียงลำดับ
   icons.js     ชุดไอคอนลายเส้น SVG ใช้ทั้งเว็บ
-  img/         รูปภาพ 73 ไฟล์
+  img/         รูปภาพ 74 ไฟล์
 ```
 
-แก้ข้อมูลสินค้า ราคา สต็อก และลำดับตัวกรอง ได้ที่ `assets/data.js` ไฟล์เดียว
+แก้ข้อมูลสินค้า ราคา สต็อก ลำดับและคำในตัวกรอง ได้ที่ `assets/data.js` ไฟล์เดียว
 
 ## Deploy ขึ้น Vercel
 
@@ -38,6 +40,9 @@ assets/
 2. Vercel → Add New → Project → เลือก repo
 3. Application Preset เลือก **Other** — ไม่ต้องกรอก Build Command หรือ Output Directory
 4. Deploy
+
+เปิดเว็บหลัง deploy แล้วกด Ctrl+Shift+R (Windows) หรือ Cmd+Shift+R (Mac) เสมอ
+ไม่งั้นเบราว์เซอร์จะยังใช้ CSS เก่าที่จำไว้
 
 ## รันในเครื่อง
 

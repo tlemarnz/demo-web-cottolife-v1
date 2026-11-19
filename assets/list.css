@@ -76,7 +76,7 @@ body.whyon .fnum{display:inline-flex;align-items:center;justify-content:center;w
 .aclear{background:none;border:0;color:var(--red);font:inherit;font-size:12.5px;cursor:pointer;text-decoration:underline}
 
 /* ---- การ์ดซีรีส์ ---- */
-.sgrid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px;padding:18px 0 0}
+.sgrid{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;padding:18px 0 0}
 .sgrid.cols2{grid-template-columns:repeat(2,1fr)}
 .sgrid.rows{grid-template-columns:1fr;gap:12px}
 .scard{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#fff;display:flex;
@@ -159,8 +159,13 @@ body.whyon .fnum{display:inline-flex;align-items:center;justify-content:center;w
   font-size:14px;cursor:pointer}
 .sopt input{width:18px;height:18px;accent-color:var(--red);margin:0}
 
+@media (max-width:1180px){
+  .sgrid{grid-template-columns:repeat(3,1fr)}
+}
 @media (max-width:1080px){
   .layout{grid-template-columns:240px 1fr;gap:22px}
+}
+@media (max-width:900px){
   .sgrid{grid-template-columns:repeat(2,1fr)}
 }
 @media (max-width:860px){
@@ -232,3 +237,12 @@ body.whyon .fnum{display:inline-flex;align-items:center;justify-content:center;w
 .stockline.ok::before{content:"● ";font-size:9px;vertical-align:1px}
 .stockline.out{color:var(--mute)}
 .stockline.out::before{content:"○ ";font-size:9px;vertical-align:1px}
+
+/* เฉพาะสินค้าพร้อมส่ง */
+.instock{display:flex;align-items:center;gap:8px;border:1px solid var(--line-2);border-radius:999px;
+  padding:7px 14px 7px 11px;font-size:13px;cursor:pointer;white-space:nowrap;background:#fff;
+  transition:border-color .15s,background .15s}
+.instock:hover{border-color:var(--ink)}
+.instock input{width:16px;height:16px;accent-color:var(--red);margin:0;cursor:pointer}
+.instock:has(input:checked){border-color:var(--ink);background:var(--ink);color:#fff}
+.instock.mob{width:100%;justify-content:flex-start;border-radius:9px;padding:12px 13px;margin:4px 0 6px}
