@@ -221,3 +221,14 @@ body.whyon .fnum{display:inline-flex;align-items:center;justify-content:center;w
 .vtog button{display:flex;align-items:center;justify-content:center}
 .fhead .car{display:inline-flex;transition:transform .15s}
 .fhead .car .ic{width:13px;height:13px}
+
+/* ราคา + จำนวนสต็อกใต้ราคา (แทนรายละเอียดสี/ขนาดเดิม) */
+.scard .pr{display:block;margin-top:auto;padding-top:11px}
+.scard .pr .p{display:flex;align-items:baseline;gap:7px;flex-wrap:wrap;font-size:17px;font-weight:700;
+  letter-spacing:-.2px;line-height:1.3}
+.scard .pr .was{font-size:12px}
+.stockline{font-size:12px;padding-top:5px;font-weight:600}
+.stockline.ok{color:var(--green)}
+.stockline.ok::before{content:"● ";font-size:9px;vertical-align:1px}
+.stockline.out{color:var(--mute)}
+.stockline.out::before{content:"○ ";font-size:9px;vertical-align:1px}

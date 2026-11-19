@@ -352,9 +352,6 @@ tr.hit td{background:var(--red-soft)}
   section.band{padding:40px 0}
   .sec-head h2{font-size:22px}
   .list-head h1{font-size:24px}
-  .gal{grid-template-columns:1fr}
-  .thumbs{flex-direction:row;overflow-x:auto;order:2}
-  .thumb{flex:0 0 64px}
   .cta-band{padding:26px}
 }
 @media(max-width:620px){

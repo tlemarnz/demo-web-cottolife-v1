@@ -27,7 +27,7 @@
 <div class="typebar" id="typebar"><div class="wrap" id="typebarIn"></div></div>
 
 <div class="mbar wrap" id="mbar">
-  <button id="mFil"><span id="icFil"></span>ตัวกรอง <span class="fnum" id="mFilN" hidden>0</span></button>
+  <button id="mFil"><span id="icFil"></span>ค้นหาแบบที่ชอบ <span class="fnum" id="mFilN" hidden>0</span></button>
   <button id="mSort"><span id="icSort"></span>เรียงลำดับ</button>
 </div>
 
@@ -35,7 +35,7 @@
 
   <aside class="side">
     <div class="side-top">
-      <b>ตัวกรอง</b>
+      <b>ค้นหาแบบที่ชอบ</b>
       <button id="clrAll" hidden>ล้างทั้งหมด</button>
     </div>
     <div id="facets"></div>
@@ -81,7 +81,7 @@
 <div class="sheet" id="shFil">
   <div class="sc" data-close></div>
   <div class="sp">
-    <div class="sh"><b>ตัวกรอง</b><button data-close>×</button></div>
+    <div class="sh"><b>ค้นหาแบบที่ชอบ</b><button data-close>×</button></div>
     <div class="sbody">
       <div id="facetsM"></div>
     </div>
@@ -272,8 +272,7 @@
           '<span class="lb">' + v + '</span><span class="fcount">' + c + "</span></label>";
       }
       return '<div class="fgroup' + (open ? " open" : "") + '" data-g="' + f.key + '">' +
-        '<button class="fhead" data-h="' + f.key + '">' +
-          '<span class="fnum">' + n + "</span>" + f.label +
+        '<button class="fhead" data-h="' + f.key + '">' + f.label +
           (act ? '<span class="dotnew"></span>' : "") +
           '<span class="car">' + ICON("down") + "</span></button>" +
         '<div class="fbody">' +
@@ -299,18 +298,10 @@
     var s = g.s, hit = "", unit = cat === "tile" ? "/ ตร.ม." : cat === "accessory" ? "/ ชิ้น" : "/ ชุด";
     var tot = s.skus.length;
     if (g.hits.length < tot) hit = '<div class="hit">ตรงเงื่อนไข ' + g.hits.length + " จาก " + tot + " รายการ</div>";
-    var meta = cat === "tile"
-      ? '<span class="vcount"><b>' + g.nFinish + '</b> ผิวสัมผัส</span>' +
-        '<span class="vcount"><b>' + g.nSize + '</b> ขนาด</span>' +
-        (g.nColor > 1 ? '<span class="vcount"><b>' + g.nColor + "</b> สี</span>" : "") +
-        '<span class="vcount">' + g.hits[0].slip + "</span>"
-      : cat === "accessory"
-      ? '<span class="vcount"><b>' + g.nColor + '</b> สี</span>' +
-        '<span class="vcount">' + g.hits[0].material + "</span>" +
-        '<span class="vcount">' + g.hits[0].mount + "</span>"
-      : '<span class="vcount"><b>' + g.hits.length + '</b> รุ่น</span>' +
-        '<span class="vcount">' + g.hits[0].kind.replace("สุขภัณฑ์", "") + "</span>" +
-        (g.hits[0].rough !== "-" ? '<span class="vcount">ท่อ ' + g.hits[0].rough + "</span>" : "");
+    var pcs = cat === "tile" ? "กล่อง" : cat === "accessory" ? "ชิ้น" : "ชุด";
+    var stock = g.inStock
+      ? '<div class="stockline ok">พร้อมส่ง ' + g.stockN + " " + pcs + "</div>"
+      : '<div class="stockline out">สินค้าหมดชั่วคราว</div>';
     var was = (g.priceWas && g.priceWas > g.priceFrom)
       ? '<span class="was">' + money(g.priceWas) + "</span>" : "";
     return '<article class="scard">' +
@@ -324,10 +315,9 @@
         '<div class="bn">' + s.brand + "</div>" +
         '<h3><a href="detail.html?s=' + s.id + '">' + s.name + "</a></h3>" +
         '<div class="sb">' + s.sub + "</div>" +
-        '<div class="meta">' + meta + "</div>" + hit +
-        '<div class="pr"><div><div class="p' + (was ? " sale" : "") + '">' + money(g.priceFrom) +
-          '<span class="u"> ' + unit + "</span></div>" + was + "</div>" +
-          CL.stockChip({stockState: g.inStock ? "ready" : "out"}) + "</div>" +
+        hit +
+        '<div class="pr"><div class="p' + (was ? " sale" : "") + '">' + money(g.priceFrom) +
+          '<span class="u"> ' + unit + "</span>" + was + "</div>" + stock + "</div>" +
       "</div></article>";
   }
 
@@ -364,7 +354,7 @@
     /* chip ตัวกรองที่ใช้งาน */
     var ac = $("#achips"); ac.hidden = !nAct;
     if (nAct) {
-      ac.innerHTML = '<span class="lbl">กำลังกรอง:</span>' + FAC.map(function (f) {
+      ac.innerHTML = '<span class="lbl">กำลังดู:</span>' + FAC.map(function (f) {
         return (sel[f.key] || []).map(function (v) {
           return '<button class="achip" data-rm="' + f.key + '|' + v + '">' +
             "<span>" + f.label + "</span><b>" + v + "</b><span class='x'>×</span></button>";
@@ -522,8 +512,8 @@
       "เพราะกระเบื้องซื้อเป็นปริมาณ ส่วนต่าง 100 บาทต่อตารางเมตร คูณ 40 ตารางเมตรก็กลายเป็น 4,000 บาท " +
       "ถัดมาคือ <b>ลวดลาย</b> และ <b>ผิวสัมผัส</b> ซึ่งเป็นสิ่งที่ตอบได้โดยไม่ต้องมีความรู้ช่าง " +
       "แล้วจึงเป็น <b>ค่าต้านทานความลื่น (R)</b> ที่ตามมาจากผิวสัมผัสโดยตรง</p>" +
-      "<p>ตัวกรองอย่าง <b>ความหนา</b> และ <b>ฉลากเขียว</b> อยู่ล่างสุดเพราะเป็นตัวกรองของผู้รับเหมาและงานที่ต้องยื่น" +
-      "คะแนนอาคารเขียว ไม่ใช่คำถามแรกของเจ้าของบ้าน ส่วน <b>ขนาด</b> จัดกลุ่มตามการใช้งาน " +
+      "<p>ตัวกรองอย่าง <b>ความหนา</b> อยู่ล่างสุดเพราะเป็นตัวกรองของผู้รับเหมาที่ทำงานภายนอก " +
+      "ไม่ใช่คำถามแรกของเจ้าของบ้าน ส่วน <b>ขนาด</b> จัดกลุ่มตามการใช้งาน " +
       "(ขนาดมาตรฐาน / ขนาดใหญ่ / ลายไม้ / กระเบื้องผนัง) ไม่ได้เรียงตามตัวเลข เพราะ 20x120 กับ 120x120 " +
       "คือสินค้าสองโลกที่ไม่ควรอยู่ติดกัน</p>" +
       '<div class="lk"><a href="list.html?cat=tile">กระเบื้องทั้งหมด</a>' +

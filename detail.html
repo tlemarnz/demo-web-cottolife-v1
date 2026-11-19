@@ -85,7 +85,7 @@
     $("#gBadge").hidden = !S["new"];
     $("#gThumbs").innerHTML = g.map(function (t, i) {
       return '<button class="' + (i === gi ? "on" : "") + '" data-g="' + i + '" aria-label="' + t[1] + '">' +
-        '<img src="' + img(t[0]) + '" alt=""><span class="tl">' + t[1] + "</span></button>";
+        '<img src="' + img(t[0]) + '" alt=""></button>';
     }).join("");
     var ICON = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
       'stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
@@ -131,7 +131,7 @@
   function chipsOf() {
     return (isTile
       ? [(K.slip !== "-" ? "กันลื่น " + K.slip + " · " : "") + C.finish[K.finish].label,
-         K.usage.join(" / "), K.env, K.green ? "ฉลากเขียว" : ""]
+         K.usage.join(" / "), K.env, K.thickClass.indexOf("พิเศษ") >= 0 ? "หนาพิเศษ " + K.thick + " มม." : ""]
       : isAcc
       ? [K.kind, K.material, K.mount, "รับประกัน " + K.warranty]
       : [K.rate !== "-" ? K.rate : K.dim, K.rough !== "-" ? "ท่อ " + K.trap.replace("-Trap", "") +

@@ -361,12 +361,10 @@ window.CATALOG = (function () {
        get:function(k){ return k.color; }},
       {key:"size", label:"ขนาด (ซม.)", why:"จัดกลุ่มตามการใช้งาน ไม่เรียงตัวเลข เพราะรายการขนาดดิบอ่านไม่รู้เรื่อง",
        groups:SIZE_GROUPS, get:function(k){ return k.size; }},
-      {key:"use", label:"การใช้งาน", why:"ลูกค้าส่วนใหญ่เข้ามาจากหมวดที่บอกการใช้งานอยู่แล้ว จึงอยู่ล่างลงมา",
+      {key:"use", label:"พื้นที่การใช้งาน", why:"ลูกค้าส่วนใหญ่เข้ามาจากหมวดที่บอกการใช้งานอยู่แล้ว จึงอยู่ล่างลงมา",
        get:function(k){ return k.use; }},
       {key:"thickClass", label:"ความหนา", why:"ตัวกรองของผู้รับเหมางานภายนอก คนทั่วไปแทบไม่ใช้",
-       get:function(k){ return k.thickClass; }},
-      {key:"green", label:"ฉลากเขียว", why:"ใช้เฉพาะงานที่ต้องยื่นคะแนนอาคารเขียว",
-       options:[{v:"Green Label Collection"}], get:function(k){ return k.green ? "Green Label Collection" : null; }}
+       get:function(k){ return k.thickClass; }}
     ],
     accessory: [
       {key:"kind", label:"ประเภทอุปกรณ์", why:"คนเข้ามาหาของชิ้นที่รู้อยู่แล้วว่าต้องการอะไร",
