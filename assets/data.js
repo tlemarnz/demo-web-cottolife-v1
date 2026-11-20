@@ -364,14 +364,12 @@ window.CATALOG = (function () {
        get:function(k){ return k.pricePerSqm; }, range:true},
       {key:"pattern", label:"ลวดลาย", why:"คำถามที่ลูกค้าตอบได้โดยไม่ต้องมีความรู้ช่าง และเป็นตัวตัดสินใจหลัก",
        get:function(k){ return k.pattern; }},
-      {key:"finishLabel", label:"ผิวสัมผัส", why:"กำหนดทั้งหน้าตาและความลื่น จึงวางไว้ก่อนค่า R",
-       get:function(k){ return k.finishLabel; }},
-      {key:"slip", label:"ค่าต้านทานความลื่น (R)", why:"ต่อจากผิวสัมผัสทันที เพราะผิวเป็นตัวกำหนดค่า R",
-       get:function(k){ return k.slip === "-" ? "ไม่มีค่า R" : k.slip; }},
-      {key:"color", label:"สี", why:"ใช้กรองซ้ำภายในลายที่เลือกไว้แล้ว", swatch:{
+      {key:"color", label:"สี", why:"คู่กับลวดลาย เป็นสิ่งที่ลูกค้านึกออกก่อนเรื่องผิวหรือขนาด", swatch:{
         "ขาว":"#F2F2F0","ครีม":"#E3D9C6","เทา":"#9A9A96","ดำ":"#3B3B3B",
         "น้ำตาล":"#9C7449","เขียวอ่อน":"#BAC6B8","น้ำเงิน":"#3E5068"},
        get:function(k){ return k.color; }},
+      {key:"finishLabel", label:"ผิวสัมผัส", why:"กำหนดทั้งหน้าตาและความลื่น เป็นสเปกตัวแรกที่ต้องตัดสิน",
+       get:function(k){ return k.finishLabel; }},
       {key:"size", label:"ขนาด (ซม.)", why:"จัดกลุ่มตามการใช้งาน ไม่เรียงตัวเลข เพราะรายการขนาดดิบอ่านไม่รู้เรื่อง",
        groups:SIZE_GROUPS, get:function(k){ return k.size; }},
       {key:"thickClass", label:"ความหนา", why:"ตัวกรองของผู้รับเหมางานภายนอก คนทั่วไปแทบไม่ใช้",
